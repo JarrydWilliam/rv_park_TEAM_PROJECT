@@ -1,0 +1,164 @@
+/* Premium dark theme inspired by Linear/Notion/GitHub (dark) */
+
+:root {
+  --brand: #4f7cff;              /* accent (calm blue) */
+  --brand-600: #3b66e8;
+  --brand-700: #2f54c7;
+
+  --bg-0: #0b0f14;               /* app background (near black, cool) */
+  --bg-1: #10141c;               /* base surface */
+  --bg-2: #131826;               /* elevated surface */
+  --bg-3: #171d2c;               /* highest elevation */
+
+  --text-1: #e6e8ee;             /* primary text */
+  --text-2: #b8bfcc;             /* secondary text */
+  --text-3: #8b93a7;             /* tertiary text */
+
+  --border-1: #20263a;
+  --border-2: #2a3148;
+
+  --shadow-1: 0 8px 28px rgba(0, 0, 0, .45);
+  --shadow-2: 0 2px 12px rgba(0, 0, 0, .35);
+
+  --radius: 14px;
+}
+
+/* Map to Bootstrap tokens for seamless integration */
+[data-bs-theme="dark"] {
+  --bs-body-bg: var(--bg-0);
+  --bs-body-color: var(--text-1);
+  --bs-border-color: var(--border-1);
+
+  --bs-primary: var(--brand);
+  --bs-primary-rgb: 79,124,255;
+
+  --bs-card-bg: var(--bg-2);
+  --bs-card-border-color: var(--border-1);
+
+  --bs-link-color: #a7c1ff;
+  --bs-link-hover-color: #c2d3ff;
+
+  --bs-success: #24c08e;
+  --bs-success-rgb: 36,192,142;
+
+  --bs-table-color: var(--text-1);
+  --bs-table-bg: transparent;
+  --bs-table-striped-bg: rgba(255,255,255,.03);
+  --bs-table-hover-bg: rgba(255,255,255,.05);
+
+  color-scheme: dark;
+}
+
+/* Typography & base */
+html, body {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.container { max-width: 1120px; }
+
+/* Navbar */
+.bg-nav {
+  background: rgba(16, 20, 28, .85);
+  backdrop-filter: saturate(160%) blur(8px);
+  -webkit-backdrop-filter: saturate(160%) blur(8px);
+  border-color: var(--border-1) !important;
+}
+
+.btn-ghost {
+  color: var(--text-2);
+  border: 1px solid transparent;
+  background: transparent;
+}
+.btn-ghost:hover {
+  color: var(--text-1);
+  border-color: var(--border-2);
+  background: rgba(255,255,255,.04);
+}
+.btn-ghost:active {
+  transform: translateY(1px);
+}
+
+/* Page hero */
+.page-hero {
+  background:
+    radial-gradient(1200px 300px at 20% -40%, rgba(79,124,255,.15), transparent 60%),
+    radial-gradient(900px 240px at 80% -30%, rgba(36,192,142,.10), transparent 60%);
+  border-bottom: 1px solid var(--border-1);
+  padding: 28px 0 18px;
+}
+
+/* Cards */
+.card-elevated {
+  background: linear-gradient(180deg, var(--bg-2), var(--bg-2));
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-2);
+}
+.card-elevated:hover {
+  box-shadow: var(--shadow-1);
+  transition: box-shadow .18s ease;
+}
+
+/* Forms */
+.form-label { color: var(--text-2); }
+.form-control, .form-select {
+  background-color: var(--bg-1);
+  border: 1px solid var(--border-1);
+  color: var(--text-1);
+  border-radius: 10px;
+}
+.form-control::placeholder { color: var(--text-3); }
+
+.form-control:focus, .form-select:focus, .btn:focus-visible {
+  border-color: rgba(79,124,255,.6);
+  box-shadow: 0 0 0 3px rgba(79,124,255,.25);
+  outline: none;
+}
+
+/* Buttons */
+.btn-primary {
+  background: linear-gradient(180deg, var(--brand), var(--brand-600));
+  border: 1px solid var(--brand-700);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: linear-gradient(180deg, var(--brand-600), var(--brand-700));
+  border-color: var(--brand-700);
+}
+.btn-outline-secondary {
+  color: var(--text-2);
+  border: 1px solid var(--border-2);
+}
+.btn-outline-secondary:hover {
+  color: var(--text-1);
+  background: rgba(255,255,255,.05);
+}
+
+/* Badges for subtle surfaces */
+.bg-surface {
+  background: var(--bg-1) !important;
+}
+
+/* Tables */
+.table-dark thead th {
+  color: var(--text-2);
+  font-weight: 600;
+  border-bottom-color: var(--border-2);
+}
+.table > :not(caption) > * > * {
+  border-bottom-color: var(--border-1);
+}
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: var(--bs-table-striped-bg);
+}
+.table-hover > tbody > tr:hover > * {
+  background-color: var(--bs-table-hover-bg);
+}
+
+/* Utilities */
+.text-muted { color: var(--text-3) !important; }
+.border { border-color: var(--border-1) !important; }
+.rounded-xl { border-radius: var(--radius) !important; }

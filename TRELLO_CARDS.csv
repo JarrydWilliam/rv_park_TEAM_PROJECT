@@ -1,0 +1,7 @@
+Title,Description,List Name,Labels,Due Date
+Finalize Team Charter,"Complete team name, roles, cadence.",Backlog,doc,2025-09-10
+Write Background (a–e),"Fill problem, domain/users, comps, limitations, solution.",Backlog,doc,2025-09-11
+Create Private GitHub Repo,Push code and add instructor.,Backlog,ops,2025-09-12
+Run DB with Docker,Start MySQL via docker compose.,Backlog,dev,2025-09-09
+Migrate & Seed,Run Prisma migrate + seed.,Backlog,dev,2025-09-09
+Hello Demo,Show full flow.,Selected for Sprint,demo,2025-09-13

@@ -1,0 +1,9 @@
+Title,Description,List Name,Labels,Due Date
+Create Discord channels,"#announcements, #standup, #dev, #qa, #general",Backlog,ops,2025-10-06
+Finalize Team Name/Motto/Logo,"Decide and update charter",Backlog,team,2025-10-06
+Assign roles,"Product, Tech, FE, BE, QA, Liaison",Backlog,team,2025-10-06
+Complete Team Charter,"Includes Background (a–e)",Backlog,doc,2025-10-06
+Create private GitHub repo,"Add instructor as collaborator",Backlog,ops,2025-10-06
+Import this backlog CSV into Trello,"Use Trello import",Backlog,ops,2025-10-06
+WSL setup & run app,"Install Node (nvm), MySQL; migrate/seed; run",Selected for Sprint,dev,2025-10-06
+Demo to instructor,"Show Hello-World + DB; Trello board",Selected for Sprint,demo,2025-10-20

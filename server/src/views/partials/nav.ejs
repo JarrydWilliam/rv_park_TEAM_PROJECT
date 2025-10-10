@@ -1,0 +1,51 @@
+<nav class="navbar navbar-expand bg-nav sticky-top border-bottom">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center gap-2 fw-semibold" href="/">
+      <i class="bi bi-compass"></i> RV Park
+    </a>
+
+    <ul class="navbar-nav ms-auto flex-row gap-2 align-items-center">
+      <li class="nav-item"><a class="btn btn-sm btn-ghost" href="/vacancy"><i class="bi bi-calendar-week me-1"></i>Vacancy</a></li>
+      <li class="nav-item"><a class="btn btn-sm btn-ghost" href="/health"><i class="bi bi-activity me-1"></i>Health</a></li>
+      <li class="nav-item">
+        <button class="btn btn-sm btn-ghost" id="themeToggle" aria-label="Toggle theme">
+          <i class="bi bi-moon-stars" id="themeIcon"></i>
+          <span class="ms-1 d-none d-sm-inline" id="themeLabel">Dark</span>
+        </button>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<script>
+(() => {
+  const root = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  const icon = document.getElementById('themeIcon');
+  const label = document.getElementById('themeLabel');
+
+  function applyIconLabel(theme) {
+    if (theme === 'dark') {
+      icon.className = 'bi bi-moon-stars';
+      label && (label.textContent = 'Dark');
+    } else {
+      icon.className = 'bi bi-brightness-high';
+      label && (label.textContent = 'Light');
+    }
+  }
+
+  function setTheme(next) {
+    root.setAttribute('data-bs-theme', next);
+    localStorage.setItem('theme', next);
+    applyIconLabel(next);
+  }
+
+  const current = root.getAttribute('data-bs-theme') || 'dark';
+  applyIconLabel(current);
+
+  btn?.addEventListener('click', () => {
+    const cur = root.getAttribute('data-bs-theme') || 'dark';
+    setTheme(cur === 'dark' ? 'light' : 'dark');
+  });
+})();
+</script>

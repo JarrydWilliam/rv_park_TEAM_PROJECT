@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum SiteType {
+  STANDARD
+  TENT
+  DRY
+  TRAILER
+}
+
+enum ReservationStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  CAPTURED
+  REFUNDED
+  PARTIAL
+}
+
+model Site {
+  id           Int           @id @default(autoincrement())
+  number       Int           @unique
+  type         SiteType
+  lengthFt     Int
+  pullThrough  Boolean       @default(false)
+  active       Boolean       @default(true)
+  reservations Reservation[]
+}
+
+model Reservation {
+  id               Int               @id @default(autoincrement())
+  siteId           Int
+  site             Site              @relation(fields: [siteId], references: [id])
+  guestName        String
+  guestEmail       String
+  rigLengthFt      Int
+  checkIn          DateTime
+  checkOut         DateTime
+  status           ReservationStatus @default(CONFIRMED)
+  pcs              Boolean           @default(false)
+  confirmationCode String            @unique
+  nightlyRate      Decimal?          @db.Decimal(10, 2)
+  amountPaid       Decimal?          @db.Decimal(10, 2)
+  createdAt        DateTime          @default(now())
+  payments         Payment[]
+}
+
+model SpecialEvent {
+  id                Int      @id @default(autoincrement())
+  name              String
+  startDate         DateTime
+  endDate           DateTime
+  oneNightCancelFee Boolean  @default(true)
+}
+
+model RatePlan {
+  id            Int       @id @default(autoincrement())
+  name          String
+  amount        Decimal   @db.Decimal(10, 2)
+  siteType      SiteType?
+  effectiveFrom DateTime
+  effectiveTo   DateTime
+}
+
+model Payment {
+  id            Int           @id @default(autoincrement())
+  reservationId Int
+  reservation   Reservation   @relation(fields: [reservationId], references: [id])
+  amount        Decimal       @db.Decimal(10, 2)
+  status        PaymentStatus @default(CAPTURED)
+  method        String        @default("TEST")
+  capturedAt    DateTime      @default(now())
+}
