@@ -43,7 +43,7 @@ I have experience with Python, Java, C#, C++, JavaScript, SQL, Bash, and PowerSh
 
 
 ### **Anastasia Salazar**
-Back-end developer and QA tester with strong skills in database management, testing, and integration. Available Tuesday, Thursday, and weekends.
+I am currently an analyst at Jade Global, with coding experience in Python, Java, C++, and a variety of other languages, both front-end and back-end. Available Tuesday, Thursday, and weekends. 
 
 ---
 
