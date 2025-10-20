@@ -39,7 +39,8 @@ Developer at TruBridge/CPSI, designing and optimizing healthcare technology syst
 Experienced U.S. Air Force veteran and **Sr. Software Developer at HX5** with a strong background in software automation, systems integration, and full-stack development. Skilled in Node.js, SQL, Jenkins, Python, and modern DevOps practices. Available most days except Saturday.
 
 ### **Jackson Stryker**
-Front-end developer focused on clean, intuitive user interfaces and responsive design. Proficient in JavaScript frameworks and UI/UX best practices. Available every day after 4 PM.
+I have experience with Python, Java, C#, C++, JavaScript, SQL, Bash, and PowerShell. I’ve designed and implemented MySQL databases and developed applications with Node.js, Express, and following software engineering best practices. Proficient in JavaScript frameworks and UI/UX best practices. Available every day after 4 PM.
+
 
 ### **Anastasia Salazar**
 Back-end developer and QA tester with strong skills in database management, testing, and integration. Available Tuesday, Thursday, and weekends.
@@ -52,7 +53,7 @@ Back-end developer and QA tester with strong skills in database management, test
 |------|--------------------|--------|----------------------|------------------------|
 | **Suresh Khaniya** | khaniyasuresh12@gmail.com | 563-239-7471 | Python, Java, C, C#, C++, TS, JavaScript, MySQL, SQLite, MongoDB, PostgreSQL, Git, GitHub, Bash, PowerShell, SQLAlchemy, Pandas | Mon/Wed/Weekends (9 AM–1 PM) |
 | **Jarryd Burke** | jarrydburke@weber.edu | 603-769-1257 | Software automation, full-stack web development, DevOps, database management, team coordination | Any time |
-| **Jackson Stryker** | jacksonthestryker@gmail.com | 801-425-0516 | Front-end development, UI/UX design, JavaScript frameworks | Every day after 4 PM |
+| **Jackson Stryker** | jacksonthestryker@gmail.com | 801-425-0516 | Front-end development, UI/UX design, JavaScript frameworks, MySQL | Every day after 4 PM |
 | **Anastasia Salazar** | anastasia.slzr00@gmail.com | — | Back-end development, testing, database integration | Tues/Thurs/Weekends |
 
 ---
