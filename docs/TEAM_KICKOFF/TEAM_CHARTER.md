@@ -30,6 +30,11 @@ Modernizing RV park reservations and permit control through technology that keep
 
 ---
 
+## Software Stack
+Node.js
+
+---
+
 ## Team Members & Briefs
 
 ### **Suresh Khaniya**
@@ -54,7 +59,7 @@ I am currently an analyst at Jade Global, with coding experience in Python, Java
 | **Suresh Khaniya** | khaniyasuresh12@gmail.com | 563-239-7471 | Python, Java, C, C#, C++, TS, JavaScript, MySQL, SQLite, MongoDB, PostgreSQL, Git, GitHub, Bash, PowerShell, SQLAlchemy, Pandas | Mon/Wed/Weekends (9 AM–1 PM) |
 | **Jarryd Burke** | jarrydburke@weber.edu | 603-769-1257 | Software automation, full-stack web development, DevOps, database management, team coordination | Any time |
 | **Jackson Stryker** | jacksonthestryker@gmail.com | 801-425-0516 | Front-end development, UI/UX design, JavaScript frameworks, MySQL | Every day after 4 PM |
-| **Anastasia Salazar** | anastasia.slzr00@gmail.com | — | Back-end development, testing, database integration | Tues/Thurs/Weekends |
+| **Anastasia Salazar** | anastasia.slzr00@gmail.com | 385-383-5987 | Back-end development, testing, database integration | Tues/Thurs/Weekends |
 
 ---
 
