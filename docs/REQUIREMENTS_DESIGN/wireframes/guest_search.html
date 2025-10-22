@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Guest – Search Availability</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <style>
+    body{font-family:system-ui,Arial,sans-serif; margin:0; background:#f7f7f7;}
+    header,footer{background:#111;color:#fff;padding:14px 20px}
+    main{max-width:960px;margin:20px auto;padding:16px;background:#fff;border:1px solid #ddd;border-radius:8px}
+    .row{display:grid;grid-template-columns:1fr 2fr;gap:18px}
+    fieldset{border:1px dashed #bbb;border-radius:8px;padding:12px;margin-bottom:16px}
+    label{display:block;margin:6px 0 4px}
+    input,select,button{padding:8px;border:1px solid #ccc;border-radius:6px;width:100%}
+    .result{border:1px solid #ddd;border-radius:8px;padding:12px;margin-bottom:12px;background:#fafafa}
+    .muted{color:#666;font-size:14px}
+    .nav{margin-bottom:8px}
+    .nav a{margin-right:10px}
+  </style>
+</head>
+<body>
+<header>
+  <strong>Guest – Search Availability</strong>
+  <div class="nav"><a href="./index.html" style="color:#fff">← Back</a></div>
+</header>
+<main>
+  <div class="row">
+    <section>
+      <form>
+        <fieldset>
+          <legend>Search Filters</legend>
+          <label>Check-in</label>
+          <input type="date" />
+          <label>Check-out</label>
+          <input type="date" />
+          <label>RV Length (ft)</label>
+          <input type="number" placeholder="e.g., 34" />
+          <label>Hookups</label>
+          <select>
+            <option>Any</option>
+            <option>Water & Electric</option>
+            <option>Full (W/E/S)</option>
+          </select>
+          <label>Pad Type</label>
+          <select>
+            <option>Any</option>
+            <option>Concrete</option>
+            <option>Gravel</option>
+          </select>
+          <button type="button" onclick="alert('Static mock: no backend')">Search</button>
+        </fieldset>
+      </form>
+      <p class="muted">FR-1: Search availability by date/length/hookups.</p>
+    </section>
+
+    <section>
+      <h3>Available Sites (mock)</h3>
+      <div class="result">
+        <strong>Site 17</strong> — Full hookups, 40ft max — $45/night<br/>
+        <button onclick="location.href='guest_reserve.html'">Reserve</button>
+      </div>
+      <div class="result">
+        <strong>Site 22</strong> — W/E, 34ft max — $38/night<br/>
+        <button onclick="location.href='guest_reserve.html'">Reserve</button>
+      </div>
+      <div class="result">
+        <strong>Site 8</strong> — Gravel, 50ft max — $42/night<br/>
+        <button onclick="location.href='guest_reserve.html'">Reserve</button>
+      </div>
+      <p class="muted">Shows capacity/constraints so user picks a compatible spot (FR-5).</p>
+    </section>
+  </div>
+</main>
+<footer>Guest flow: Search → Reserve → Confirm</footer>
+</body>
+</html>
