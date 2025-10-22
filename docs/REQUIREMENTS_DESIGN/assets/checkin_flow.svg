@@ -1,0 +1,24 @@
+<!-- checkin_flow.svg (original flow mock) -->
+<svg width="900" height="340" viewBox="0 0 900 340" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="340" fill="#FFFFFF"></rect>
+  <text x="20" y="30" font-family="Arial" font-weight="700" font-size="22" fill="#223">Check-in / Check-out Flow (Mock)</text>
+
+  <g font-family="Arial" font-size="14">
+    <rect x="40" y="100" width="160" height="60" rx="8" fill="#E5E7EB" stroke="#9CA3AF"></rect>
+    <text x="120" y="135" text-anchor="middle">Reservation Found</text>
+
+    <line x1="200" y1="130" x2="260" y2="130" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"></line>
+    <rect x="260" y="100" width="160" height="60" rx="8" fill="#D1FAE5" stroke="#94D3AC"></rect>
+    <text x="340" y="135" text-anchor="middle">Check-in → Occupied</text>
+
+    <line x1="420" y1="130" x2="480" y2="130" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrow)"></line>
+    <rect x="480" y="100" width="160" height="60" rx="8" fill="#FEE2E2" stroke="#FCA5A5"></rect>
+    <text x="560" y="135" text-anchor="middle">Check-out → Available</text>
+  </g>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L6,3 z" fill="#94A3B8"></path>
+    </marker>
+  </defs>
+</svg>
