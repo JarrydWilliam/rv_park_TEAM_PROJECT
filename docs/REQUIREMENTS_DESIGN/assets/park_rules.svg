@@ -1,0 +1,25 @@
+<!-- park_rules.svg (original poster mock) -->
+<svg width="720" height="960" viewBox="0 0 720 960" xmlns="http://www.w3.org/2000/svg">
+  <rect width="720" height="960" fill="#ffffff"></rect>
+  <rect x="40" y="40" width="640" height="120" rx="10" fill="#0B2B40"></rect>
+  <text x="360" y="110" text-anchor="middle" font-family="Arial" font-weight="700" font-size="36" fill="#E6EEF2">
+    RV PARK — HOUSE RULES
+  </text>
+
+  <g font-family="Arial" font-size="20" fill="#223">
+    <text x="60" y="220">1. Quiet hours: 10:00 PM — 7:00 AM</text>
+    <text x="60" y="260">2. Speed limit: 5 mph</text>
+    <text x="60" y="300">3. Pets leashed; clean up after pets</text>
+    <text x="60" y="340">4. Fires in designated pits only</text>
+    <text x="60" y="380">5. Respect neighbors’ space &amp; hookups</text>
+    <text x="60" y="420">6. Check-out by 11:00 AM</text>
+  </g>
+
+  <rect x="40" y="760" width="640" height="160" rx="10" fill="#F5F7FA" stroke="#CBD5E1"></rect>
+  <text x="60" y="800" font-family="Arial" font-weight="700" font-size="22" fill="#223">
+    Emergency / Contact
+  </text>
+  <text x="60" y="840" font-family="Arial" font-size="18" fill="#223">
+    Camp Host: (555) 555-1212 • Office: (555) 555-3434
+  </text>
+</svg>
