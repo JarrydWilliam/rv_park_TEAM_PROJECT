@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Employee Dashboard</title>
+  <!-- Serve static files from /public via express.static; use absolute path here -->
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <header>
+        <h1 style="text-align:center;">Employee Dashboard</h1>
+        <nav style="text-align:center;">
+            <a href="/employee/reservations">📅 Manage Reservations</a>
+            <a href="/employee/sites">🏕️ Site Status</a>
+            <a href="/employee/maintenance">🛠️ Maintenance Tickets</a>
+            <a href="/logout">🚪 Logout</a>
+        </nav>
+  </header>
+
+    <main class="container py-4">
+        <h2 class="mb-4">Welcome, John Doe!</h2>
+
+        <section class="mb-5">
+            <h3 class="h5 mb-3">Today's Check-ins</h3>
+            <div class="card card-elevated">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Reservation ID</th>
+                                    <th>Guest Name</th>
+                                    <th>Site</th>
+                                    <th>Arrival</th>
+                                    <th>Departure</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>R12345</td>
+                                    <td>Jane Doe</td>
+                                    <td>12</td>
+                                    <td>Oct 30, 2025</td>
+                                    <td>Nov 2, 2025</td>
+                                    <td><span class="badge bg-warning text-dark">Not Checked In</span></td>
+                                    <td>
+                                        <button class="btn btn-success btn-sm me-2">Mark as Checked In</button>
+                                        <button class="btn btn-outline-primary btn-sm">View Guest Details</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>R12346</td>
+                                    <td>Sam Smith</td>
+                                    <td>7</td>
+                                    <td>Oct 30, 2025</td>
+                                    <td>Nov 1, 2025</td>
+                                    <td><span class="badge bg-warning text-dark">Not Checked In</span></td>
+                                    <td>
+                                        <button class="btn btn-success btn-sm me-2">Mark as Checked In</button>
+                                        <button class="btn btn-outline-primary btn-sm">View Guest Details</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h3 class="h5 mb-3">Today's Check-outs</h3>
+            <div class="card card-elevated">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Reservation ID</th>
+                                    <th>Guest Name</th>
+                                    <th>Site</th>
+                                    <th>Arrival</th>
+                                    <th>Departure</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>R54321</td>
+                                    <td>Alex Lee</td>
+                                    <td>15</td>
+                                    <td>Oct 27, 2025</td>
+                                    <td>Oct 30, 2025</td>
+                                    <td><span class="badge bg-info text-dark">Checked In</span></td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm me-2">Mark as Checked Out</button>
+                                        <button class="btn btn-outline-primary btn-sm">View Guest Details</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>R54322</td>
+                                    <td>Chris Kim</td>
+                                    <td>22</td>
+                                    <td>Oct 28, 2025</td>
+                                    <td>Oct 30, 2025</td>
+                                    <td><span class="badge bg-info text-dark">Checked In</span></td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm me-2">Mark as Checked Out</button>
+                                        <button class="btn btn-outline-primary btn-sm">View Guest Details</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>

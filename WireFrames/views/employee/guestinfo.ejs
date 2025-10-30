@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Guest Info</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --bs-primary: #28a745;
+      --bs-primary-rgb: 40,167,69;
+    }
+  </style>
+</head>
+
+<body>
+    <header>
+        <h1 style="text-align:center;">Guest Info</h1>
+            <nav style="text-align:center;">
+            <a href="/employee/reservations">📅 Manage Reservations</a>
+            <a href="/employee/sites">🏕️ Site Status</a>
+            <a href="/employee/maintenance">🛠️ Maintenance Tickets</a>
+            <a href="/logout">🚪 Logout</a>
+        </nav>
+  </header>
+
+  <main class="container py-4">
+    <section class="card card-elevated mx-auto mb-4" style="max-width: 500px;">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Guest Details</h2>
+        <dl class="row mb-0">
+          <dt class="col-sm-4">Name</dt>
+          <dd class="col-sm-8">Jane Doe</dd>
+          <dt class="col-sm-4">Email</dt>
+          <dd class="col-sm-8">jane.doe@email.com</dd>
+          <dt class="col-sm-4">Phone</dt>
+          <dd class="col-sm-8">555-123-4567</dd>
+        </dl>
+      </div>
+    </section>
+    <section class="card card-elevated mx-auto mb-4" style="max-width: 700px;">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Reservation History</h2>
+        <div class="table-responsive">
+          <table class="table table-hover table-striped align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Reservation ID</th>
+                <th>Site</th>
+                <th>Dates</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>R12345</td>
+                <td>12</td>
+                <td>Oct 30 – Nov 2, 2025</td>
+                <td><span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">Completed</span></td>
+              </tr>
+              <tr>
+                <td>R12399</td>
+                <td>7</td>
+                <td>Nov 10 – Nov 12, 2025</td>
+                <td><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Upcoming</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+    <div class="text-center">
+      <a href="/employee/dashboard" class="btn btn-primary btn-lg"><i class="bi bi-arrow-left me-1"></i>Back to Dashboard</a>
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

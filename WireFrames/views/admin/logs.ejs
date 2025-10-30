@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>System Logs</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --bs-primary: #28a745;
+            --bs-primary-rgb: 40,167,69;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1 class="text-center my-3">System Logs</h1>
+        <nav style="text-align:center;">
+            <a href="/admin/sites">🏕️ Manage Sites</a>
+            <a href="/admin/users">👥 Manage Users</a>
+            <a href="/admin/reports">📊 Reports</a>
+            <a href="/admin/logs">⚙️ System Logs</a>
+            <a href="/logout">🚪 Logout</a>
+            </nav>
+    </header>
+
+    <main class="container py-4">
+        <div class="d-flex justify-content-end mb-3 gap-2">
+            <button class="btn btn-primary"><i class="bi bi-hdd-fill me-1"></i> Backup Data</button>
+            <button class="btn btn-secondary"><i class="bi bi-arrow-repeat me-1"></i> Restore Backup</button>
+        </div>
+        <h2 class="mb-4">Recent System Logs</h2>
+        <section class="card card-elevated">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2025-10-30 09:15</td>
+                                <td>Jane Doe</td>
+                                <td>Login</td>
+                                <td>Successful login</td>
+                            </tr>
+                            <tr>
+                                <td>2025-10-30 09:18</td>
+                                <td>Sam Smith</td>
+                                <td>Update Site</td>
+                                <td>Changed Site 12 status to Maintenance</td>
+                            </tr>
+                            <tr>
+                                <td>2025-10-30 09:20</td>
+                                <td>Alex Lee</td>
+                                <td>Close Ticket</td>
+                                <td>Closed Ticket T1003</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

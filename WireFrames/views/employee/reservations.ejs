@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reservation Management</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --bs-primary: #28a745;
+      --bs-primary-rgb: 40,167,69;
+    }
+  </style>
+</head>
+
+<body>
+    <header>
+        <h1 style="text-align:center;">Reservation Management</h1>
+            <nav style="text-align:center;">
+            <a href="/employee/reservations">📅 Manage Reservations</a>
+            <a href="/employee/sites">🏕️ Site Status</a>
+            <a href="/employee/maintenance">🛠️ Maintenance Tickets</a>
+            <a href="/logout">🚪 Logout</a>
+        </nav>
+  </header>
+
+  <main class="container py-4">
+    <h2 class="mb-4">All Reservations</h2>
+    <section class="card card-elevated">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover table-striped align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Reservation ID</th>
+                <th>Guest Name</th>
+                <th>Site</th>
+                <th>Dates</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>R12345</td>
+                <td>Jane Doe</td>
+                <td>12</td>
+                <td>Oct 30 – Nov 2, 2025</td>
+                <td><span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">Confirmed</span></td>
+                <td>
+                  <button class="btn btn-outline-primary btn-sm me-2">Modify</button>
+                  <button class="btn btn-outline-danger btn-sm me-2">Cancel</button>
+                  <button class="btn btn-outline-secondary btn-sm">View Guest Details</button>
+                </td>
+              </tr>
+              <tr>
+                <td>R12399</td>
+                <td>Sam Smith</td>
+                <td>7</td>
+                <td>Nov 10 – Nov 12, 2025</td>
+                <td><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Upcoming</span></td>
+                <td>
+                  <button class="btn btn-outline-primary btn-sm me-2">Modify</button>
+                  <button class="btn btn-outline-danger btn-sm me-2">Cancel</button>
+                  <button class="btn btn-outline-secondary btn-sm">View Guest Details</button>
+                </td>
+              </tr>
+              <tr>
+                <td>R12400</td>
+                <td>Alex Lee</td>
+                <td>15</td>
+                <td>Oct 25 – Oct 28, 2025</td>
+                <td><span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle">Cancelled</span></td>
+                <td>
+                  <button class="btn btn-outline-primary btn-sm me-2" disabled>Modify</button>
+                  <button class="btn btn-outline-danger btn-sm me-2" disabled>Cancel</button>
+                  <button class="btn btn-outline-secondary btn-sm">View Guest Details</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

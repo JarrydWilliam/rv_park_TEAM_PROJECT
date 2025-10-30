@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE-edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons (CDN) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Override Bootstrap primary color to a green accent -->
+    <style>
+        :root {
+            /* Primary color -> green */
+            --bs-primary: #28a745; /* bootstrap green (similar to .btn-success) */
+            --bs-primary-rgb: 40,167,69;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+      <h1 style="text-align:center;">Book a Site</h1>
+      <nav>
+        <a href="/guest/search">🔍 Search Campsites</a>
+        <a href="/guest/manage">📅 My Reservations</a>
+        <a href="/guest/profile">👤 Profile</a>
+        <a href="/logout">🚪 Logout</a>
+      </nav>
+    </header>
+
+    <main class="container py-4">
+      <section class="card card-elevated mb-4">
+        <div class="card-body">
+          <h2 class="h4 mb-3">Selected Site Details</h2>
+          <dl class="row mb-0">
+            <dt class="col-sm-3">Site Number</dt>
+            <dd class="col-sm-9">12</dd>
+            <dt class="col-sm-3">Type</dt>
+            <dd class="col-sm-9">STANDARD</dd>
+            <dt class="col-sm-3">Length (ft)</dt>
+            <dd class="col-sm-9">30</dd>
+            <dt class="col-sm-3">Pull-through</dt>
+            <dd class="col-sm-9">Yes</dd>
+            <dt class="col-sm-3">Hookups</dt>
+            <dd class="col-sm-9">
+              <span class="badge bg-secondary-subtle text-secondary-emphasis border">Power</span>
+              <span class="badge bg-secondary-subtle text-secondary-emphasis border">Water</span>
+              <span class="badge bg-secondary-subtle text-secondary-emphasis border">Sewer</span>
+            </dd>
+            <dt class="col-sm-3">Status</dt>
+            <dd class="col-sm-9"><span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">Available</span></dd>
+          </dl>
+        </div>
+      </section>
+      <section class="card card-elevated">
+        <div class="card-body">
+          <h2 class="h5 mb-3">Reservation Details</h2>
+          <form>
+            <div class="row g-3 align-items-end">
+              <div class="col-md-4">
+                <label class="form-label" for="arrival">Arrival Date</label>
+                <input type="date" class="form-control" id="arrival" name="arrival" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="departure">Departure Date</label>
+                <input type="date" class="form-control" id="departure" name="departure" required>
+              </div>
+              <div class="col-md-4 d-grid">
+                <button type="submit" class="btn btn-primary btn-lg">Confirm Reservation</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+</body>
+</html>
