@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>RV Park – Wireframes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <style>
+    body{font-family:system-ui,Arial,sans-serif; margin:0; background:#f7f7f7;}
+    header,footer{background:#111;color:#fff;padding:14px 20px}
+    main{max-width:960px;margin:20px auto;padding:16px;background:#fff;border:1px solid #ddd;border-radius:8px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+    .card{border:1px solid #ddd;border-radius:8px;padding:16px;background:#fafafa}
+    a.button{display:inline-block;padding:10px 14px;border:1px solid #444;border-radius:6px;text-decoration:none;color:#111;background:#fff}
+    .muted{color:#666;font-size:14px}
+  </style>
+</head>
+<body>
+<header><strong>RV Park – Wireframes (Module 7)</strong></header>
+<main>
+  <p class="muted">Navigation below jumps between static wireframes. No backend.</p>
+  <div class="grid">
+    <div class="card">
+      <h2>Guest</h2>
+      <p>Search availability and make a reservation.</p>
+      <a class="button" href="./guest_search.html">Open Guest Search</a>
+    </div>
+    <div class="card">
+      <h2>Staff</h2>
+      <p>Arrivals / Departures / In-house overview with quick actions.</p>
+      <a class="button" href="./staff_dashboard.html">Open Staff Dashboard</a>
+    </div>
+    <div class="card">
+      <h2>Admin</h2>
+      <p>Users & Roles, Sites CRUD, and simple reports.</p>
+      <a class="button" href="./admin_panel.html">Open Admin Panel</a>
+    </div>
+  </div>
+</main>
+<footer>The Campground Coders • Module 7 Requirements & Design</footer>
+</body>
+</html>
