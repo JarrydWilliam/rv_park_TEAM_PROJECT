@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Staff Dashboard (Wireframe)</title>
+  <style>
+    body { font-family: system-ui, Arial; margin: 24px; }
+    header { display:flex; justify-content:space-between; align-items:center; }
+    nav a { margin-right: 12px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    .kpi { display:grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 16px 0; }
+    .card { border:1px solid #ddd; padding:12px; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Staff Dashboard</h1>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="guest_search.html">Search</a>
+    <a href="admin_panel.html">Admin</a>
+  </nav>
+</header>
+
+<section class="kpi">
+  <div class="card"><strong>Arrivals Today:</strong> 7</div>
+  <div class="card"><strong>Departures Today:</strong> 5</div>
+  <div class="card"><strong>Sites OOS:</strong> 2</div>
+</section>
+
+<section class="card">
+  <h2>Today’s Arrivals</h2>
+  <table>
+    <thead><tr><th>Res #</th><th>Guest</th><th>Site</th><th>ETA</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>1021</td><td>Guest One</td><td>A01</td><td>2:00 PM</td><td><button>Check In</button></td></tr>
+      <tr><td>1022</td><td>Guest Two</td><td>A02</td><td>4:30 PM</td><td><button>Check In</button></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2>Quick Actions</h2>
+  <form>
+    <label>Reassign Site: <input placeholder="Res #"/></label>
+    <label>New Site: <input placeholder="e.g., B01"/></label>
+    <button type="button">Reassign</button>
+  </form>
+</section>
+</body>
+</html>

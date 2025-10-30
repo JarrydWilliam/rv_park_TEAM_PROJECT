@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Admin Panel (Wireframe)</title>
+  <style>
+    body { font-family: system-ui, Arial; margin: 24px; }
+    header { display:flex; justify-content:space-between; align-items:center; }
+    nav a { margin-right: 12px; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .card { border:1px solid #ddd; padding:12px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Admin Panel</h1>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="guest_search.html">Search</a>
+    <a href="staff_dashboard.html">Staff</a>
+  </nav>
+</header>
+
+<div class="grid">
+  <section class="card">
+    <h2>Manage Sites</h2>
+    <form>
+      <label>Site Code <input placeholder="A03"/></label>
+      <label>Type
+        <select>
+          <option>Standard</option><option>Premium</option><option>ADA</option>
+        </select>
+      </label>
+      <label>Max Length (ft) <input type="number" value="35"/></label>
+      <label>Power
+        <select>
+          <option>NONE</option><option>15A</option><option>30A</option><option>50A</option>
+        </select>
+      </label>
+      <label><input type="checkbox" checked/> Water</label>
+      <label><input type="checkbox" checked/> Sewer</label>
+      <button type="button">Add / Update</button>
+    </form>
+    <table>
+      <thead><tr><th>Code</th><th>Type</th><th>Len</th><th>Power</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>A01</td><td>Standard</td><td>35</td><td>30A</td><td>AVAILABLE</td></tr>
+        <tr><td>A02</td><td>Standard</td><td>40</td><td>50A</td><td>AVAILABLE</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>Manage Users & Roles</h2>
+    <form>
+      <label>Email <input placeholder="user@example.com"/></label>
+      <label>Role
+        <select><option>guest</option><option>staff</option><option>admin</option></select>
+      </label>
+      <button type="button">Invite / Update</button>
+    </form>
+    <table>
+      <thead><tr><th>Email</th><th>Role</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>guest1@example.com</td><td>guest</td><td>active</td></tr>
+        <tr><td>staff1@example.com</td><td>staff</td><td>active</td></tr>
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<section class="card" style="margin-top:16px;">
+  <h2>Reports (snapshot)</h2>
+  <ul>
+    <li>Occupancy (30d): 72%</li>
+    <li>Revenue (month): $12,340</li>
+    <li>OOS Sites: 2</li>
+  </ul>
+</section>
+</body>
+</html>
