@@ -2,9 +2,8 @@
 
 **Course:** CS 3750 – Software Engineering II  
 **Project Stage:** Module 8 – Alpha Version  
-**Instructor:** [Insert Instructor Name]  
+**Instructor:** Dr. William Fry
 **Repository:** [https://github.com/JarrydWilliam/rv_park_TEAM_PROJECT](https://github.com/JarrydWilliam/rv_park_TEAM_PROJECT)  
-**Branch:** `feature/jarryd-module7`  
 
 ---
 
