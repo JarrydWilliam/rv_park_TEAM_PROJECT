@@ -1,0 +1,27 @@
+{
+  "name": "rv_park_consolidated_team_project",
+  "version": "1.0.0",
+  "description": "This repository contains: - `docs/TEAM_CHARTER.md` — satisfies all Charter + Background (a–e) items - `docs/logo.svg` — placeholder logo - `docs/TRELLO_CARDS.csv` — import into Trello - Minimal code fixes for EJS `<title>` and Prisma schema",
+  "main": "alpha.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "alpha": "node alpha.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JarrydWilliam/rv_park_TEAM_PROJECT.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JarrydWilliam/rv_park_TEAM_PROJECT/issues"
+  },
+  "homepage": "https://github.com/JarrydWilliam/rv_park_TEAM_PROJECT#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
