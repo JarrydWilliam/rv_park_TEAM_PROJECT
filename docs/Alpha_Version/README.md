@@ -1,4 +1,4 @@
-# 🏕️ CS 3750 RV Park Management System – Alpha Version
+# CS 3750 RV Park Management System – Alpha Version
 
 **Course:** CS 3750 – Software Engineering II  
 **Project Stage:** Module 8 – Alpha Version  
@@ -7,7 +7,7 @@
 
 ---
 
-## 🧑‍💻 Team Members
+## Team Members
 | Name | Role |
 |------|------|
 | **Jarryd Burke** | Lead Developer / Full-Stack Integration |
@@ -17,7 +17,7 @@
 
 ---
 
-## 🎯 Purpose of the Alpha Version
+## Purpose of the Alpha Version
 
 This **Alpha Version** is an early prototype of the RV Park Management System that demonstrates:
 1. Major **functional components** of the software  
