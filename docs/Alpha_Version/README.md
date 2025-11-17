@@ -2,8 +2,8 @@
 
 **Course:** CS 3750 – Software Engineering II  
 **Project Stage:** Module 8 – Alpha Version  
-**Instructor:** Dr. William Fry 
-**Repository:** [https://github.com/JarrydWilliam/rv_park_TEAM_PROJECT]
+**Instructor:** Dr. William Fry
+**Repository:** [https://github.com/JarrydWilliam/rv_park_TEAM_PROJECT](https://github.com/JarrydWilliam/rv_park_TEAM_PROJECT)  
 
 ---
 
@@ -70,16 +70,15 @@ These three modules demonstrate live data interaction, controller logic, and int
 
 ## Running the Alpha Version
 
-### Option 1 — Step-by-Step Commands
+### Step-by-Step Commands
 1. **Open PowerShell (or terminal)**  
-   Navigate to the project root directory and run:
+   
+   RUN:
 
-
-
-cd "C:\Users\Owner\Desktop\School\CS3750\rv_park_consolidated_TEAM_PROJECT"
-if (-not (Test-Path ".\node_modules")) { 
-  Write-Host "📦 Installing dependencies..." -ForegroundColor Yellow
+   cd "C:\Users\Owner\Desktop\School\CS3750\rv_park_consolidated_TEAM_PROJECT"
+   if (-not (Test-Path ".\node_modules")) { 
+  Write-Host "Installing dependencies..." -ForegroundColor Yellow
   npm install 
 }
-Write-Host "⚙️ Launching Alpha server on port 3050..." -ForegroundColor Green
+Write-Host "Launching Alpha server on port 3050..." -ForegroundColor Green
 npm run alpha
