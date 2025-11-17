@@ -70,7 +70,7 @@ These three modules demonstrate live data interaction, controller logic, and int
 
 ## Running the Alpha Version
 
-### Option 1 — Step-by-Step Commands
+### Step-by-Step Commands
 1. **Open PowerShell (or terminal)**  
    
    RUN:
