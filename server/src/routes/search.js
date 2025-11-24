@@ -1,9 +1,72 @@
 const express = require('express');
-const prisma = require('../db/prisma');
-const { overlapFilter } = require('../utils/policy');
 const { parseISO, startOfToday, addDays, format } = require('date-fns');
+const pool = require('../db/pool');
 
 const router = express.Router();
+
+/**
+ * Query helper:
+ * Find available sites between checkIn and checkOut that:
+ *  - are active
+ *  - satisfy rig length (if > 0)
+ *  - satisfy type (if provided)
+ *  - have NO overlapping CONFIRMED reservations in that range
+ */
+async function findAvailableSites({ checkIn, checkOut, rigLength, type, orderBy = 'lengthFt' }) {
+  const params = [];
+  let whereClauses = ['s.active = 1'];
+
+  // Rig length filter
+  if (rigLength && rigLength > 0) {
+    whereClauses.push('s.lengthFt >= ?');
+    params.push(rigLength);
+  }
+
+  // Type filter
+  if (type) {
+    whereClauses.push('s.type = ?');
+    params.push(type);
+  }
+
+  // NOT EXISTS overlapping reservations:
+  // Overlap condition (from overlapFilter):
+  //   status = 'CONFIRMED'
+  //   AND checkIn < checkOut
+  //   AND checkOut > checkIn
+  whereClauses.push(`
+    NOT EXISTS (
+      SELECT 1
+      FROM Reservation r
+      WHERE
+        r.siteId = s.id
+        AND r.status = 'CONFIRMED'
+        AND r.checkIn < ?
+        AND r.checkOut > ?
+    )
+  `);
+  params.push(checkOut, checkIn);
+
+  const whereSql = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
+  const orderSql = orderBy === 'number' ? 'ORDER BY s.number ASC' : 'ORDER BY s.lengthFt ASC';
+
+  const [rows] = await pool.query(
+    `
+      SELECT
+        s.id,
+        s.number,
+        s.type,
+        s.lengthFt,
+        s.description,
+        s.active
+      FROM Site s
+      ${whereSql}
+      ${orderSql}
+    `,
+    params
+  );
+
+  return rows;
+}
 
 // Home: empty form
 router.get('/', async (req, res) => {
@@ -27,14 +90,12 @@ router.get('/search', async (req, res) => {
     const checkIn = parseISO(check_in);
     const checkOut = parseISO(check_out);
 
-    const results = await prisma.site.findMany({
-      where: {
-        active: true,
-        lengthFt: { gte: rigLength },
-        ...(type ? { type } : {}),
-        reservations: { none: overlapFilter(checkIn, checkOut) },
-      },
-      orderBy: { lengthFt: 'asc' },
+    const results = await findAvailableSites({
+      checkIn,
+      checkOut,
+      rigLength,
+      type,
+      orderBy: 'lengthFt',
     });
 
     res.render('search', { results, query: req.query, error: null });
@@ -63,14 +124,12 @@ router.get('/vacancy', async (req, res) => {
     const checkIn = parseISO(check_in);
     const checkOut = parseISO(check_out);
 
-    const results = await prisma.site.findMany({
-      where: {
-        active: true,
-        ...(rigLengthNum ? { lengthFt: { gte: rigLengthNum } } : {}),
-        ...(type ? { type } : {}),
-        reservations: { none: overlapFilter(checkIn, checkOut) },
-      },
-      orderBy: { number: 'asc' },
+    const results = await findAvailableSites({
+      checkIn,
+      checkOut,
+      rigLength: rigLengthNum,
+      type,
+      orderBy: 'number',
     });
 
     res.render('search', {

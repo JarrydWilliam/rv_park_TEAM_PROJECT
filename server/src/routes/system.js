@@ -1,5 +1,7 @@
+// server/src/routes/system.js
+
 const express = require('express');
-const prisma = require('../db/prisma');
+const pool = require('../db/pool');
 
 const router = express.Router();
 
@@ -8,15 +10,23 @@ router.get('/health', (req, res) => {
   res.json({ ok: true });
 });
 
+// helper: count rows in a table
+async function countTable(tableName) {
+  const [rows] = await pool.query(
+    `SELECT COUNT(*) AS count FROM \`${tableName}\``
+  );
+  return rows[0]?.count ?? 0;
+}
+
 // prove DB connectivity + show basic counts
 router.get('/dbcheck', async (req, res) => {
   try {
     const [sites, reservations, payments, events, ratePlans] = await Promise.all([
-      prisma.site.count(),
-      prisma.reservation.count(),
-      prisma.payment.count(),
-      prisma.specialEvent.count(),
-      prisma.ratePlan.count(),
+      countTable('Site'),
+      countTable('Reservation'),
+      countTable('Payment'),
+      countTable('SpecialEvent'),
+      countTable('RatePlan'),
     ]);
 
     res.json({
