@@ -12,7 +12,8 @@
     "date-fns": "^3.6.0",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
-    "express": "^4.19.2",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
     "mysql2": "^3.15.3"
   },
   "devDependencies": {

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/head', { title: 'Employee Dashboard' }) %>
+  </head>
+  <body>
+    <%- include('../partials/nav') %>
+
+    <main class="container py-4">
+      <h1 class="h3 mb-3">Employee Dashboard</h1>
+      <p class="text-muted mb-4">Tools for day-to-day RV park operations.</p>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <a href="/reservations" class="card card-elevated text-decoration-none">
+            <div class="card-body">
+              <h2 class="h5 mb-1">Manage Reservations</h2>
+              <p class="text-muted mb-0">Search, check in/out, and update bookings.</p>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6">
+          <a href="/" class="card card-elevated text-decoration-none">
+            <div class="card-body">
+              <h2 class="h5 mb-1">Site Availability</h2>
+              <p class="text-muted mb-0">Quick view of current and upcoming occupancy.</p>
+            </div>
+          </a>
+        </div>
+      </div>
+    </main>
+
+    <%- include('../partials/footer') %>
+  </body>
+</html>
