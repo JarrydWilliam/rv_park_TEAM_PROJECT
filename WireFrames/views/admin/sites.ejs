@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Site Management</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --bs-primary: #28a745;
+            --bs-primary-rgb: 40,167,69;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1 class="text-center my-3">Site Management</h1>
+        <nav style="text-align:center;">
+            <a href="/admin/sites">🏕️ Manage Sites</a>
+            <a href="/admin/users">👥 Manage Users</a>
+            <a href="/admin/reports">📊 Reports</a>
+            <a href="/admin/logs">⚙️ System Logs</a>
+            <a href="/logout">🚪 Logout</a>
+            </nav>
+    </header>
+
+    <main class="container py-4">
+        <h2 class="mb-4">Site Management</h2>
+        <section class="card card-elevated">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Site ID</th>
+                                <th>Type</th>
+                                <th>Rate</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>12</td>
+                                <td>STANDARD</td>
+                                <td>$45/night</td>
+                                <td>
+                                    <button class="btn btn-outline-primary btn-sm me-2">Edit</button>
+                                    <button class="btn btn-outline-success btn-sm">Update</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>15</td>
+                                <td>TENT</td>
+                                <td>$30/night</td>
+                                <td>
+                                    <button class="btn btn-outline-primary btn-sm me-2">Edit</button>
+                                    <button class="btn btn-outline-success btn-sm">Update</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>22</td>
+                                <td>TRAILER</td>
+                                <td>$55/night</td>
+                                <td>
+                                    <button class="btn btn-outline-primary btn-sm me-2">Edit</button>
+                                    <button class="btn btn-outline-success btn-sm">Update</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

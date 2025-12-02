@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Manage Users</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --bs-primary: #28a745;
+            --bs-primary-rgb: 40,167,69;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1 class="text-center my-3">Manage Users</h1>
+        <nav style="text-align:center;">
+            <a href="/admin/sites">🏕️ Manage Sites</a>
+            <a href="/admin/users">👥 Manage Users</a>
+            <a href="/admin/reports">📊 Reports</a>
+            <a href="/admin/logs">⚙️ System Logs</a>
+            <a href="/logout">🚪 Logout</a>
+        </nav>
+    </header>
+
+        <main class="container py-4">
+            <div class="d-flex justify-content-end mb-3">
+                <button class="btn btn-primary"><i class="bi bi-person-plus me-1"></i> Add User</button>
+            </div>
+            <section class="card card-elevated">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>User ID</th>
+                                    <th>Name</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>U1001</td>
+                                    <td>Jane Doe</td>
+                                    <td>Admin</td>
+                                    <td><span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">Active</span></td>
+                                    <td>
+                                        <button class="btn btn-outline-secondary btn-sm me-2">Assign Role</button>
+                                        <button class="btn btn-outline-danger btn-sm">Deactivate User</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>U1002</td>
+                                    <td>Sam Smith</td>
+                                    <td>Staff</td>
+                                    <td><span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">Active</span></td>
+                                    <td>
+                                        <button class="btn btn-outline-secondary btn-sm me-2">Assign Role</button>
+                                        <button class="btn btn-outline-danger btn-sm">Deactivate User</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>U1003</td>
+                                    <td>Alex Lee</td>
+                                    <td>Staff</td>
+                                    <td><span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle">Inactive</span></td>
+                                    <td>
+                                        <button class="btn btn-outline-secondary btn-sm me-2">Assign Role</button>
+                                        <button class="btn btn-outline-danger btn-sm" disabled>Deactivate User</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+</body>
+</html>

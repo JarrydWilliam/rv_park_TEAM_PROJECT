@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Guest Dashboard</title>
+  <!-- Serve static files from /public via express.static; use absolute path here -->
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <h1 style="text-align:center;">Guest Dashboard</h1>
+    <nav>
+      <a href="/guest/search">🔍 Search Campsites</a>
+      <a href="/guest/manage">📅 My Reservations</a>
+      <a href="/guest/profile">👤 Profile</a>
+      <a href="/logout">🚪 Logout</a>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Welcome, Jane Doe!</h2>
+
+    <section>
+      <h3>Your Upcoming Reservations</h3>
+      <table>
+        <tr>
+          <th>Reservation ID</th>
+          <th>Site</th>
+          <th>Dates</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+        <tr>
+          <td>R12345</td>
+          <td>Site 12 (Full Hookup)</td>
+          <td>Nov 5 – Nov 8, 2025</td>
+          <td>Confirmed</td>
+          <td>
+            <button>Modify</button>
+            <button>Cancel</button>
+          </td>
+        </tr>
+      </table>
+    </section>
+  </main>
+
+  <footer>
+    &copy; 2025 Campground Reservation System
+  </footer>
+</body>
+</html>

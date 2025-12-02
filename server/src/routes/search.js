@@ -1,8 +1,25 @@
+// server/src/routes/search.js
+
 const express = require('express');
 const { parseISO, startOfToday, addDays, format } = require('date-fns');
 const pool = require('../db/pool');
 
 const router = express.Router();
+
+/**
+ * Helper: fetch min / max rig length from active sites.
+ * Used so the UI can show valid bounds to the user.
+ */
+async function getRigBounds() {
+  const [rows] = await pool.query(
+    'SELECT MIN(lengthFt) AS minLen, MAX(lengthFt) AS maxLen FROM Site WHERE active = 1'
+  );
+  const row = rows[0] || {};
+  return {
+    minLen: row.minLen || 1,
+    maxLen: row.maxLen || 100
+  };
+}
 
 /**
  * Query helper:
@@ -29,7 +46,6 @@ async function findAvailableSites({ checkIn, checkOut, rigLength, type, orderBy 
   }
 
   // NOT EXISTS overlapping reservations:
-  // Overlap condition (from overlapFilter):
   //   status = 'CONFIRMED'
   //   AND checkIn < checkOut
   //   AND checkOut > checkIn
@@ -70,11 +86,20 @@ async function findAvailableSites({ checkIn, checkOut, rigLength, type, orderBy 
 
 // Home: empty form
 router.get('/', async (req, res) => {
-  res.render('search', { results: null, query: {}, error: null });
+  const rigBounds = await getRigBounds();
+
+  res.render('search', {
+    results: null,
+    query: {},
+    error: null,
+    rigBounds
+  });
 });
 
 // Standard search via form submit
 router.get('/search', async (req, res) => {
+  const rigBounds = await getRigBounds();
+
   try {
     const { check_in, check_out, rig_length, type } = req.query;
 
@@ -83,6 +108,7 @@ router.get('/search', async (req, res) => {
         results: null,
         query: req.query,
         error: 'Please provide check-in, check-out, and rig length.',
+        rigBounds
       });
     }
 
@@ -95,12 +121,17 @@ router.get('/search', async (req, res) => {
       checkOut,
       rigLength,
       type,
-      orderBy: 'lengthFt',
+      orderBy: 'lengthFt'
     });
 
-    res.render('search', { results, query: req.query, error: null });
+    res.render('search', { results, query: req.query, error: null, rigBounds });
   } catch (e) {
-    res.render('search', { results: null, query: req.query, error: String(e) });
+    res.render('search', {
+      results: null,
+      query: req.query,
+      error: String(e),
+      rigBounds
+    });
   }
 });
 
@@ -111,6 +142,8 @@ router.get('/search', async (req, res) => {
  * - Reuses the same 'search' template
  */
 router.get('/vacancy', async (req, res) => {
+  const rigBounds = await getRigBounds();
+
   try {
     const today = startOfToday();
     const defaultIn = format(today, 'yyyy-MM-dd');
@@ -129,7 +162,7 @@ router.get('/vacancy', async (req, res) => {
       checkOut,
       rigLength: rigLengthNum,
       type,
-      orderBy: 'number',
+      orderBy: 'number'
     });
 
     res.render('search', {
@@ -138,12 +171,18 @@ router.get('/vacancy', async (req, res) => {
         check_in,
         check_out,
         rig_length: rigLengthNum ? String(rigLengthNum) : '',
-        type,
+        type
       },
       error: null,
+      rigBounds
     });
   } catch (e) {
-    res.render('search', { results: null, query: req.query, error: String(e) });
+    res.render('search', {
+      results: null,
+      query: req.query,
+      error: String(e),
+      rigBounds
+    });
   }
 });
 
