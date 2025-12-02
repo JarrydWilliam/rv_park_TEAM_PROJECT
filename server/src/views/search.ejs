@@ -17,21 +17,51 @@
       <section class="card card-elevated">
         <div class="card-body">
           <% if (error) { %>
-            <div class="alert alert-danger mb-4"><i class="bi bi-exclamation-triangle me-2"></i><%= error %></div>
+            <div class="alert alert-danger mb-4">
+              <i class="bi bi-exclamation-triangle me-2"></i><%= error %>
+            </div>
           <% } %>
+
+          <% 
+            const minLen = (rigBounds && rigBounds.minLen) || 1;
+            const maxLen = (rigBounds && rigBounds.maxLen) || 100;
+          %>
 
           <form method="get" action="/search" class="row g-3 align-items-end">
             <div class="col-md-3">
               <label class="form-label">Check-in</label>
-              <input type="date" name="check_in" class="form-control" value="<%= (query && query.check_in) || '' %>" required>
+              <input
+                type="date"
+                name="check_in"
+                class="form-control"
+                value="<%= (query && query.check_in) || '' %>"
+                required
+              >
             </div>
             <div class="col-md-3">
               <label class="form-label">Check-out</label>
-              <input type="date" name="check_out" class="form-control" value="<%= (query && query.check_out) || '' %>" required>
+              <input
+                type="date"
+                name="check_out"
+                class="form-control"
+                value="<%= (query && query.check_out) || '' %>"
+                required
+              >
             </div>
             <div class="col-md-3">
               <label class="form-label">Rig length (ft)</label>
-              <input type="number" min="1" name="rig_length" class="form-control" value="<%= (query && query.rig_length) || '' %>" required>
+              <input
+                type="number"
+                name="rig_length"
+                class="form-control"
+                min="<%= minLen %>"
+                max="<%= maxLen %>"
+                value="<%= (query && query.rig_length) || '' %>"
+                required
+              >
+              <div class="form-text">
+                Allowed range: <%= minLen %>–<%= maxLen %> ft.
+              </div>
             </div>
             <div class="col-md-2">
               <label class="form-label">Site type</label>
@@ -44,7 +74,9 @@
               </select>
             </div>
             <div class="col-md-1 d-grid">
-              <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i>
+              </button>
             </div>
           </form>
         </div>
@@ -53,7 +85,10 @@
       <% if (results && results.length) { %>
         <section class="mt-4">
           <div class="d-flex align-items-center justify-content-between mb-2">
-            <h2 class="h5 mb-0">Available Sites <span class="text-muted fw-normal">(<%= results.length %>)</span></h2>
+            <h2 class="h5 mb-0">
+              Available Sites
+              <span class="text-muted fw-normal">(<%= results.length %>)</span>
+            </h2>
           </div>
 
           <div class="table-responsive card card-elevated">
@@ -63,18 +98,37 @@
                   <th class="w-25">#</th>
                   <th>Type</th>
                   <th>Length (ft)</th>
-                  <th>Pull-through</th>
                   <th>Status</th>
+                  <th class="text-end">Action</th>
                 </tr>
               </thead>
               <tbody>
                 <% results.forEach(s => { %>
                   <tr>
                     <td class="fw-medium"><%= s.number %></td>
-                    <td><span class="badge rounded-pill bg-surface border text-body"><%= s.type %></span></td>
+                    <td>
+                      <span class="badge rounded-pill bg-surface border text-body">
+                        <%= s.type %>
+                      </span>
+                    </td>
                     <td><%= s.lengthFt %></td>
-                    <td><%= s.pullThrough ? 'Yes' : 'No' %></td>
-                    <td><span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">Available</span></td>
+                    <td>
+                      <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">
+                        Available
+                      </span>
+                    </td>
+                    <td class="text-end">
+                      <form method="get" action="/reserve/new" class="d-inline">
+                        <input type="hidden" name="siteId" value="<%= s.id %>">
+                        <input type="hidden" name="check_in" value="<%= query.check_in %>">
+                        <input type="hidden" name="check_out" value="<%= query.check_out %>">
+                        <input type="hidden" name="rig_length" value="<%= query.rig_length %>">
+                        <input type="hidden" name="type" value="<%= query.type || '' %>">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                          Reserve
+                        </button>
+                      </form>
+                    </td>
                   </tr>
                 <% }); %>
               </tbody>

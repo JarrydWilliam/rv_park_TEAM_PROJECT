@@ -13,11 +13,65 @@ const {
 const router = express.Router();
 
 /**
+ * GET /reserve/new
+ * Step 2 of the "hotel-style" flow:
+ *  - User has already searched for availability.
+ *  - They clicked "Reserve" on a specific site.
+ *  - We load that site and show a reservation form for those dates.
+ *
+ * Query params expected:
+ *  - siteId
+ *  - check_in (yyyy-MM-dd)
+ *  - check_out (yyyy-MM-dd)
+ *  - rig_length
+ *  - type (optional, mostly for display)
+ */
+router.get('/reserve/new', async (req, res) => {
+  try {
+    const { siteId, check_in, check_out, rig_length, type } = req.query;
+
+    if (!siteId || !check_in || !check_out || !rig_length) {
+      return res.status(400).send('Missing required reservation parameters.');
+    }
+
+    const siteIdNum = Number(siteId);
+    const rigLengthNum = Number(rig_length);
+
+    // Load the selected site (only active sites)
+    const [siteRows] = await pool.query(
+      'SELECT * FROM Site WHERE id = ? AND active = 1 LIMIT 1',
+      [siteIdNum]
+    );
+    const site = siteRows[0];
+
+    if (!site) {
+      return res.status(404).send('Selected site not found or inactive.');
+    }
+
+    res.render('reserve', {
+      site,
+      query: {
+        check_in,
+        check_out,
+        rig_length: rigLengthNum ? String(rigLengthNum) : '',
+        type: type || ''
+      }
+    });
+  } catch (e) {
+    res.status(400).send(String(e));
+  }
+});
+
+/**
  * POST /reserve
  * Creates a reservation if:
  *  - Site exists and is long enough
  *  - There is no overlapping CONFIRMED reservation
  *  - Peak season rules are satisfied
+ *
+ * If there *is* an overlapping reservation, we:
+ *  - Block the booking
+ *  - Show alternative available sites for the same dates (hotel-style behavior).
  */
 router.post('/reserve', async (req, res) => {
   try {
@@ -26,35 +80,56 @@ router.post('/reserve', async (req, res) => {
       guestName,
       guestEmail,
       rigLengthFt,
-      checkIn,
-      checkOut,
-      pcs
+      pcs,
+      type // may be undefined, we'll default later
     } = req.body;
 
     const siteIdNum = Number(siteId);
     const rigLengthNum = Number(rigLengthFt);
 
+    // Accept a few possible field names for dates
+    const checkInRaw =
+      req.body.checkIn || req.body.check_in || req.body.checkin;
+    const checkOutRaw =
+      req.body.checkOut || req.body.check_out || req.body.checkout;
+
+    if (!siteIdNum || !checkInRaw || !checkOutRaw) {
+      throw new Error('Missing site, check-in, or check-out.');
+    }
+
+    const checkInDate = toDate(checkInRaw);
+    const checkOutDate = toDate(checkOutRaw);
+
+    if (
+      !(checkInDate instanceof Date) || isNaN(checkInDate.getTime()) ||
+      !(checkOutDate instanceof Date) || isNaN(checkOutDate.getTime())
+    ) {
+      throw new Error('Invalid check-in or check-out date.');
+    }
+
     // 1) Fetch site
     const [siteRows] = await pool.query(
-      'SELECT * FROM Site WHERE id = ?',
+      'SELECT * FROM Site WHERE id = ? AND active = 1',
       [siteIdNum]
     );
     const site = siteRows[0];
 
     if (!site) {
-      throw new Error('Site not found.');
+      throw new Error('Site not found or inactive.');
     }
 
-    // 2) Check rig length vs site length
+    const requestedType = type || site.type || '';
+
+    // 2) Check rig length vs site length (extra safety)
     if (site.lengthFt < rigLengthNum) {
       throw new Error('Selected site is too short for the rig.');
     }
 
-    // 3) Check for overlapping confirmed reservation
-    // Overlap logic (same as overlapFilter):
+    // 3) Check for overlapping confirmed reservation on THIS site
+    // Overlap logic:
     //   status = 'CONFIRMED'
-    //   AND checkIn < checkOut
-    //   AND checkOut > checkIn
+    //   AND checkIn < newCheckOut
+    //   AND checkOut > newCheckIn
     const [overlapRows] = await pool.query(
       `
         SELECT id
@@ -65,30 +140,93 @@ router.post('/reserve', async (req, res) => {
           AND checkOut > ?
         LIMIT 1
       `,
-      [site.id, toDate(checkOut), toDate(checkIn)]
+      [site.id, checkOutDate, checkInDate]
     );
 
     if (overlapRows.length > 0) {
-      throw new Error('Sorry, this site just got booked. Try another one.');
+      // HOTEL-STYLE BEHAVIOR:
+      // This site is not available for those dates anymore.
+      // Find alternative sites that are available for the same dates.
+
+      const params = [];
+      const whereClauses = ['s.active = 1'];
+
+      // Exclude the original site we just tried to book
+      whereClauses.push('s.id <> ?');
+      params.push(site.id);
+
+      // Rig length filter
+      if (rigLengthNum && rigLengthNum > 0) {
+        whereClauses.push('s.lengthFt >= ?');
+        params.push(rigLengthNum);
+      }
+
+      // Type filter (try to keep same type the user originally picked)
+      if (requestedType) {
+        whereClauses.push('s.type = ?');
+        params.push(requestedType);
+      }
+
+      // NOT EXISTS overlapping reservations on alternative sites
+      whereClauses.push(`
+        NOT EXISTS (
+          SELECT 1
+          FROM Reservation r
+          WHERE
+            r.siteId = s.id
+            AND r.status = 'CONFIRMED'
+            AND r.checkIn < ?
+            AND r.checkOut > ?
+        )
+      `);
+      params.push(checkOutDate, checkInDate);
+
+      const whereSql = `WHERE ${whereClauses.join(' AND ')}`;
+
+      const [alternativeRows] = await pool.query(
+        `
+          SELECT
+            s.id,
+            s.number,
+            s.type,
+            s.lengthFt,
+            s.description,
+            s.active
+          FROM Site s
+          ${whereSql}
+          ORDER BY s.lengthFt ASC
+        `,
+        params
+      );
+
+      return res.status(409).render('reserve_conflict', {
+        site,
+        checkIn: checkInRaw,
+        checkOut: checkOutRaw,
+        rigLengthFt: rigLengthNum,
+        type: requestedType,
+        alternatives: alternativeRows
+      });
     }
 
     // 4) Business rules: nights, peak season, PCS flag
-    const nightCount = nightsBetween(checkIn, checkOut);
-    const inPeak = withinPeak(checkIn) || withinPeak(checkOut);
-    const pcsFlag = (pcs === 'on' || pcs === 'true' || pcs === true);
+    const nightCount = nightsBetween(checkInDate, checkOutDate);
+    const inPeak = withinPeak(checkInDate) || withinPeak(checkOutDate);
+    const pcsFlag = (pcs === 'on' || pcs === 'true' || pcs === true || pcs === 1 || pcs === '1');
 
     if (inPeak && !pcsFlag && nightCount > 14) {
       throw new Error('Peak season limit is 14 nights (PCS exempt).');
     }
 
-    // 5) Rate lookup & amount
-    const rate = await activeRateFor(site.type, checkIn);
-    const amount = rate * nightCount;
+    // 5) Rate lookup & total amount
+    const nightlyRate = await activeRateFor(site.type, checkInDate);
+    const amountPaid = nightlyRate * nightCount;
 
     // 6) Confirmation code
     const confirmationCode = Math.random().toString(36).slice(2, 10).toUpperCase();
 
     // 7) Insert reservation
+    // IMPORTANT: only uses nightlyRate + amountPaid (no bare "amount" column).
     await pool.query(
       `
         INSERT INTO Reservation
@@ -102,12 +240,12 @@ router.post('/reserve', async (req, res) => {
         guestName,
         guestEmail,
         rigLengthNum,
-        toDate(checkIn),
-        toDate(checkOut),
+        checkInDate,
+        checkOutDate,
         pcsFlag ? 1 : 0,
         confirmationCode,
-        rate,
-        amount
+        nightlyRate,
+        amountPaid
       ]
     );
 
@@ -137,7 +275,7 @@ router.get('/confirm/:code', async (req, res) => {
     return res.status(404).send('Reservation not found.');
   }
 
-  // 2) Load site info similar to prisma include: { site: true }
+  // 2) Load site info
   const [siteRows] = await pool.query(
     'SELECT * FROM Site WHERE id = ? LIMIT 1',
     [r.siteId]
