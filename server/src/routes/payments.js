@@ -1,47 +1,97 @@
-﻿const express = require('express');
+﻿// server/src/routes/payments.js
+const express = require("express");
 const router = express.Router();
+const pool = require("../db/pool");
 
-// GET /payments - simple Alpha demo page
-router.get('/', (req, res) => {
-  res.send(`
-    <h1>Alpha Payments Demo</h1>
-    <p>This page demonstrates the Payments functional point for the Alpha version.</p>
-    <form method="post" action="/payments/process">
-      <div>
-        <label>
-          Reservation ID:
-          <input name="reservationId" required />
-        </label>
-      </div>
-      <div>
-        <label>
-          Amount:
-          <input name="amount" type="number" step="0.01" required />
-        </label>
-      </div>
-      <button type="submit">Process Payment</button>
-    </form>
-    <p><a href="/">Return to Home</a></p>
-  `);
+const {
+    nightsBetween,
+    activeRateFor
+} = require("../utils/policy");
+
+// ---------------------------------------------------------
+// GET /payments/:reservationId
+// ---------------------------------------------------------
+router.get("/:reservationId", async (req, res) => {
+    try {
+        const reservationId = req.params.reservationId;
+
+        // Get reservation + site info
+        const [rows] = await pool.query(
+            `
+      SELECT r.*, s.number AS siteNumber, s.type AS siteType
+      FROM Reservation r
+      JOIN Site s ON r.siteId = s.id
+      WHERE r.id = ?
+      LIMIT 1
+      `,
+            [reservationId]
+        );
+
+        if (!rows.length) return res.status(404).send("Reservation not found.");
+
+        const r = rows[0];
+
+        // Nights
+        const nights = nightsBetween(r.checkIn, r.checkOut);
+
+        // Rate
+        const nightlyRate = await activeRateFor(r.siteType, r.checkIn);
+
+        const totalAmount = nights * nightlyRate;
+
+        res.render("payments", {
+            title: "Complete Your Payment",
+            r,
+            nights,
+            nightlyRate,
+            totalAmount,
+            reservationId
+        });
+
+    } catch (err) {
+        console.error("GET /payments/:id error:", err);
+        res.status(500).send("Failed to load payment page.");
+    }
 });
 
-// POST /payments/process - mock payment for Alpha demo
-router.post('/process', async (req, res) => {
-  try {
-    const { reservationId, amount } = req.body;
+// ---------------------------------------------------------
+// POST /payments/process
+// ---------------------------------------------------------
+router.post("/process", async (req, res) => {
+    try {
+        const { reservationId, amountPaid, last4, billing } = req.body;
 
-    console.log(`Processing payment for reservation ${reservationId} ($${amount}) [ALPHA MOCK]`);
+        const txnId = "TXN-" + Math.random().toString(36).substring(2, 10).toUpperCase();
 
-    // For Alpha: no real DB/gateway write. Just show confirmation.
-    // Uses existing confirm.ejs view shared with the main project.
-    res.render('confirm', {
-      title: 'Payment Confirmation',
-      message: 'Payment processed successfully! (Alpha mock)',
-    });
-  } catch (err) {
-    console.error('Error in /payments/process:', err);
-    res.status(500).send('Error processing payment');
-  }
+        // Insert Payment record
+        await pool.query(
+            `
+      INSERT INTO Payment (reservationId, userId, amount, paymentMethod, status, transactionId, createdAt)
+      VALUES (?, NULL, ?, 'Credit Card', 'Completed', ?, NOW())
+      `,
+            [reservationId, amountPaid, txnId]
+        );
+
+        // Mark reservation as COMPLETED
+        await pool.query(
+            `
+      UPDATE Reservation
+      SET status = 'COMPLETED'
+      WHERE id = ?
+      `,
+            [reservationId]
+        );
+
+        res.render("confirm", {
+            title: "Payment Confirmed",
+            message: `Your payment of $${amountPaid} has been processed successfully!`,
+            txnId
+        });
+
+    } catch (err) {
+        console.error("POST /payments/process error:", err);
+        res.status(500).send("Payment processing failed.");
+    }
 });
 
 module.exports = router;
