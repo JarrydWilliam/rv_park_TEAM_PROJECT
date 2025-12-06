@@ -1,3 +1,9 @@
+const express = require('express');
+const router = express.Router();
+const crypto = require('crypto');
+const pool = require('../db/pool'); 
+const { requireRole } = require('../middleware/auth');
+
 // GET /admin/walkin_reports
 router.get('/walkin_reports', async (req, res) => {
   // Get all active sites
@@ -30,12 +36,6 @@ router.get('/walkin_reports', async (req, res) => {
   }));
   res.render('admin/walkin_reports', { availableSites });
 });
-// server/src/routes/admin.js
-const express = require('express');
-const router = express.Router();
-const crypto = require('crypto');
-const pool = require('../db/pool'); 
-const { requireRole } = require('../middleware/auth');
 
 // Daily Occupancy Report
 router.get('/reports/daily', async (req, res) => {
