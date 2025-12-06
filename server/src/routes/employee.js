@@ -1,3 +1,9 @@
+
+const express = require('express');
+const router = express.Router();
+const pool = require('../db/pool');
+const { requireRole } = require('../middleware/auth');
+
 // GET /employee/walkin_reports
 router.get('/walkin_reports', async (req, res) => {
   // Get all active sites
@@ -30,10 +36,6 @@ router.get('/walkin_reports', async (req, res) => {
   }));
   res.render('employee/walkin_reports', { availableSites });
 });
-const express = require('express');
-const router = express.Router();
-const pool = require('../db/pool');
-const { requireRole } = require('../middleware/auth');
 
 // Render manual payment form
 router.get('/reservations/:id/payment', requireRole('employee'), async (req, res) => {
@@ -52,7 +54,7 @@ router.post('/reservations/:id/payment', requireRole('employee'), async (req, re
 // List all reservations
 router.get('/reservations', requireRole('employee'), async (req, res) => {
   const [reservations] = await pool.query('SELECT r.*, s.number AS siteNumber FROM Reservation r LEFT JOIN Site s ON r.siteId = s.id');
-  res.render('employee/reservations', { reservations });
+  res.render('employee/reservations', { reservations, currentUser: req.session.user || null });
 });
 // anastasia comment
 // Render create reservation form

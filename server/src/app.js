@@ -13,6 +13,7 @@ const paymentsRoutes = require('./routes/payments');
 const reportsRoutes = require('./routes/reports');
 const adminRoutes = require('./routes/admin');
 const guestRoutes = require('./routes/guest');
+const employeeRoutes = require('./routes/employee');
 
 
 
@@ -52,6 +53,7 @@ app.use(
 
 // Register guest routes after session middlewar
 app.use('/', guestRoutes);
+app.use('/employee', employeeRoutes);
 
 
 app.use((req, res, next) => {
