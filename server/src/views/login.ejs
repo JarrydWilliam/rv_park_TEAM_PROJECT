@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('partials/head', { title: 'Sign In' }) %>
+  </head>
+  <body>
+    <%- include('partials/nav') %>
+
+    <main class="d-flex align-items-center justify-content-center" style="min-height: calc(100vh - 64px);">
+      <section class="card card-elevated p-4 p-md-5" style="max-width: 420px; width: 100%;">
+        <div class="text-center mb-4">
+          <i class="bi bi-compass display-5 mb-2"></i>
+          <h1 class="h4 fw-semibold mb-1">Sign in to RV Park</h1>
+          <p class="text-muted mb-0">Access your dashboard as a guest, employee, or admin.</p>
+        </div>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="alert alert-danger mb-3">
+            <i class="bi bi-exclamation-triangle me-2"></i><%= error %>
+          </div>
+        <% } %>
+
+        <form method="post" action="/login">
+          <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-person"></i>
+              </span>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                class="form-control"
+                autocomplete="username"
+                required
+                autofocus
+              />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-lock"></i>
+              </span>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                class="form-control"
+                autocomplete="current-password"
+                required
+              />
+            </div>
+          </div>
+
+          
+          <div class="mb-3 small text-muted">
+            Your role (customer / employee / admin) is determined by your account.
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 mb-3">
+            <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+          </button>
+
+          <div class="d-flex justify-content-between small">
+            <a href="/register" class="link-offset-1">Need an account? Register</a>
+            <a href="/forgot-password" class="link-offset-1">Forgot password?</a>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <%- include('partials/footer') %>
+  </body>
+</html>

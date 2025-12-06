@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/head', { title: 'Admin Dashboard' }) %>
+  </head>
+  <body>
+    <%- include('../partials/nav') %>
+
+    <main class="container py-4">
+      <h1 class="h3 mb-3">Admin Dashboard</h1>
+      <p class="text-muted mb-4">Administration tools and reports.</p>
+
+      <!-- First row of cards -->
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <a href="/reports" class="card card-elevated text-decoration-none">
+            <div class="card-body">
+              <h2 class="h5 mb-1">Occupancy & Availability Reports</h2>
+              <p class="text-muted mb-0">Admin-only reporting for your final presentation.</p>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-4">
+          <a href="/reservations" class="card card-elevated text-decoration-none">
+            <div class="card-body">
+              <h2 class="h5 mb-1">All Reservations</h2>
+              <p class="text-muted mb-0">View and manage all guest bookings.</p>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-4">
+          <a href="/" class="card card-elevated text-decoration-none">
+            <div class="card-body">
+              <h2 class="h5 mb-1">System Overview</h2>
+              <p class="text-muted mb-0">Quick links to search and system pages.</p>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Second row: Manage Users -->
+      <div class="row g-3">
+        <div class="col-md-4">
+          <a href="/admin/users" class="card card-elevated text-decoration-none">
+            <div class="card-body">
+              <h2 class="h5 mb-1">Manage Users</h2>
+              <p class="text-muted mb-0">View and update roles for customers, employees, and admins.</p>
+            </div>
+          </a>
+        </div>
+      </div>
+    </main>
+
+    <%- include('../partials/footer') %>
+  </body>
+</html>

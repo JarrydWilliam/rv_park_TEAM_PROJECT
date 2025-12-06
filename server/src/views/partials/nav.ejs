@@ -21,6 +21,16 @@
           <span class="ms-1 d-none d-sm-inline" id="themeLabel">Dark</span>
         </button>
       </li>
+      <% if (currentUser) { %>
+  <li class="nav-item">
+    <form action="/logout" method="post" class="d-inline">
+      <button type="submit" class="btn btn-sm btn-ghost">
+        <i class="bi bi-box-arrow-right me-1"></i> Logout
+      </button>
+    </form>
+  </li>
+<% } %>
+
     </ul>
   </div>
 </nav>

@@ -1,4 +1,4 @@
-﻿// server/src/db/pool.js
+// server/src/db/pool.js
 require("dotenv").config();
 const mysql = require("mysql2/promise");
 

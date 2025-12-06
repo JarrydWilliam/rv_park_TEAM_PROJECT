@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/head', { title: 'Guest Dashboard' }) %>
+  </head>
+  <body>
+    <%- include('../partials/nav') %>
+
+    <main class="container py-4">
+      <h1 class="h3 mb-3">Welcome, <%= currentUser?.firstName || currentUser?.username %></h1>
+      <p class="text-muted mb-4">Guest portal</p>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <a href="/" class="card card-elevated text-decoration-none">
+            <div class="card-body">
+              <h2 class="h5 mb-1">Search Availability</h2>
+              <p class="text-muted mb-0">Find and book available RV sites.</p>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6">
+          <a href="/reservations" class="card card-elevated text-decoration-none">
+            <div class="card-body">
+              <h2 class="h5 mb-1">My Reservations</h2>
+              <p class="text-muted mb-0">View, modify, or cancel your stays.</p>
+            </div>
+          </a>
+        </div>
+      </div>
+    </main>
+
+    <%- include('../partials/footer') %>
+  </body>
+</html>

@@ -1,4 +1,4 @@
-﻿// server/src/db/bootstrap.js
+// server/src/db/bootstrap.js
 //
 // On startup, this does:
 //  1) Try to connect as app user (team/team123) to rvpark.
@@ -190,7 +190,28 @@ async function bootstrapDb() {
       `CREATE USER IF NOT EXISTS '${appUser}'@'localhost' IDENTIFIED BY ?;`,
       [appPass]
     );
+ // USERS TABLE – used for login/registration and roles
+  await conn.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id              INT AUTO_INCREMENT PRIMARY KEY,
+      username        VARCHAR(50) NOT NULL UNIQUE,
+      email           VARCHAR(100) NOT NULL,
+      first_name      VARCHAR(50) NOT NULL,
+      last_name       VARCHAR(50) NOT NULL,
+      password_hash   CHAR(64) NOT NULL,
+      role            ENUM('customer', 'employee', 'admin') NOT NULL DEFAULT 'customer',
 
+      dod_affiliation VARCHAR(50) NOT NULL,
+      branch          VARCHAR(50) NOT NULL,
+      rank_grade      VARCHAR(20) NOT NULL,
+
+      num_adults      INT NOT NULL DEFAULT 1,
+      num_pets        INT NOT NULL DEFAULT 0,
+      pet_breed_notes VARCHAR(255),
+
+      created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
     // Grant privileges on this DB
     await rootConn.query(
       `GRANT ALL PRIVILEGES ON \`${dbName}\`.* TO '${appUser}'@'localhost';`
