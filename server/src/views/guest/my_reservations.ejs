@@ -7,9 +7,45 @@
     <%- include('../partials/nav') %>
     <main class="container py-4">
       <h1 class="h3 mb-3">My Reservations</h1>
-      <p class="text-muted mb-4">View, modify, or cancel your current and upcoming reservations.</p>
-      <!-- Table and management content here -->
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger"><%= error %></div>
+      <% } %>
+      <% if (!reservations || reservations.length === 0) { %>
+        <div class="alert alert-info">You have no reservations.</div>
+      <% } else { %>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>Site</th>
+                <th>Type</th>
+                <th>Check-in</th>
+                <th>Check-out</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% reservations.forEach(r => { %>
+                <tr>
+                  <td><%= r.siteNumber || r.siteId %></td>
+                  <td><%= r.siteType || '' %></td>
+                  <td><%= r.checkIn.toISOString ? r.checkIn.toISOString().slice(0,10) : r.checkIn.toString().slice(0,10) %></td>
+                  <td><%= r.checkOut.toISOString ? r.checkOut.toISOString().slice(0,10) : r.checkOut.toString().slice(0,10) %></td>
+                  <td><span class="badge <%= r.status === 'CANCELLED' ? 'bg-danger' : 'bg-success' %>"><%= r.status %></span></td>
+                  <td>
+                    <a href="/confirm/<%= r.confirmationCode %>" class="btn btn-sm btn-outline-primary">View</a>
+                    <% if (r.status !== 'CANCELLED') { %>
+                      <a href="/reservations/<%= r.id %>/edit" class="btn btn-sm btn-outline-secondary">Edit</a>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
     </main>
     <%- include('../partials/footer') %>
-  </body>
+</body>
 </html>
