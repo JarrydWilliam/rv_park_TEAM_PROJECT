@@ -5,6 +5,93 @@ const crypto = require('crypto');
 const pool = require('../db/pool'); 
 const { requireRole } = require('../middleware/auth');
 
+// Daily Occupancy Report
+router.get('/reports/daily', async (req, res) => {
+  const [sites] = await pool.query('SELECT * FROM Site ORDER BY number');
+  const [reservations] = await pool.query('SELECT * FROM Reservation WHERE checkOut >= CURDATE()');
+  // Map siteId to reservations
+  const siteMap = {};
+  sites.forEach(site => {
+    siteMap[site.id] = {
+      site,
+      current: null,
+      upcoming: []
+    };
+  });
+  const today = new Date();
+  reservations.forEach(r => {
+    const checkIn = new Date(r.checkIn);
+    const checkOut = new Date(r.checkOut);
+    if (checkIn <= today && checkOut > today) {
+      siteMap[r.siteId].current = r;
+    } else if (checkIn > today) {
+      siteMap[r.siteId].upcoming.push(r);
+    }
+  });
+  res.render('admin/daily_report', { siteMap });
+});
+
+// Availability Report (for a date range)
+router.get('/reports/availability', async (req, res) => {
+  // Default to this weekend
+  const start = req.query.start || new Date().toISOString().slice(0,10);
+  const end = req.query.end || (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + (6 - d.getDay())); // Saturday
+    return d.toISOString().slice(0,10);
+  })();
+  const [sites] = await pool.query('SELECT * FROM Site ORDER BY number');
+  const [reservations] = await pool.query('SELECT * FROM Reservation WHERE NOT (checkOut <= ? OR checkIn >= ?)', [start, end]);
+  const reservedSiteIds = new Set(reservations.map(r => r.siteId));
+  const availableSites = sites.filter(site => !reservedSiteIds.has(site.id));
+  res.render('admin/availability_report', { availableSites, start, end });
+});
+
+// List all sites
+router.get('/sites', requireRole('admin'), async (req, res) => {
+  const [sites] = await pool.query('SELECT * FROM Site');
+  res.render('admin/sites', { sites });
+});
+
+// Render create site form
+router.get('/sites/new', requireRole('admin'), (req, res) => {
+  res.render('admin/site_form', { site: null });
+});
+
+// Create site
+router.post('/sites/new', requireRole('admin'), async (req, res) => {
+  const { number, type, lengthFt, active } = req.body;
+  await pool.query('INSERT INTO Site (number, type, lengthFt, active) VALUES (?, ?, ?, ?)', [number, type, lengthFt, active ? 1 : 0]);
+  res.redirect('/admin/sites');
+});
+
+// Render edit site form
+router.get('/sites/:id/edit', requireRole('admin'), async (req, res) => {
+  const [rows] = await pool.query('SELECT * FROM Site WHERE id = ?', [req.params.id]);
+  const site = rows[0];
+  if (!site) return res.status(404).send('Site not found');
+  res.render('admin/site_form', { site });
+});
+
+// Update site
+router.post('/sites/:id/edit', requireRole('admin'), async (req, res) => {
+  const { number, type, lengthFt, active } = req.body;
+  await pool.query('UPDATE Site SET number = ?, type = ?, lengthFt = ?, active = ? WHERE id = ?', [number, type, lengthFt, active ? 1 : 0, req.params.id]);
+  res.redirect('/admin/sites');
+});
+
+// Archive/disable site
+router.post('/sites/:id/archive', requireRole('admin'), async (req, res) => {
+  await pool.query('UPDATE Site SET active = 0 WHERE id = ?', [req.params.id]);
+  res.redirect('/admin/sites');
+});
+
+// Delete site
+router.post('/sites/:id/delete', requireRole('admin'), async (req, res) => {
+  await pool.query('DELETE FROM Site WHERE id = ?', [req.params.id]);
+  res.redirect('/admin/sites');
+});
+
 function hashPassword(password) {
   return crypto.createHash('sha256').update(password).digest('hex');
 }
