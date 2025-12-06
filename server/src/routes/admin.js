@@ -60,23 +60,34 @@ router.get('/reports/daily', async (req, res) => {
       siteMap[r.siteId].upcoming.push(r);
     }
   });
-  res.render('admin/daily_report', { siteMap });
+  const sitesArray = Object.values(siteMap).map(({ site, current, upcoming }) => ({
+    siteNumber: site.number,
+    type: site.type,
+    status: current ? 'Occupied' : 'Vacant',
+    nextCheckIn: upcoming.length > 0 ? upcoming[0].checkIn : '-'
+  }));
+  res.render('admin/daily_report', { sites: sitesArray });
 });
 
 // Availability Report (for a date range)
 router.get('/reports/availability', async (req, res) => {
   // Default to this weekend
-  const start = req.query.start || new Date().toISOString().slice(0,10);
-  const end = req.query.end || (() => {
-    const d = new Date();
-    d.setDate(d.getDate() + (6 - d.getDay())); // Saturday
-    return d.toISOString().slice(0,10);
-  })();
+  const today = new Date();
+  const saturday = new Date(today);
+  saturday.setDate(today.getDate() + (6 - today.getDay()));
+  const sunday = new Date(saturday);
+  sunday.setDate(saturday.getDate() + 1);
+  const weekend = {
+    saturday: saturday.toISOString().slice(0, 10),
+    sunday: sunday.toISOString().slice(0, 10)
+  };
+  const start = req.query.start || today.toISOString().slice(0,10);
+  const end = req.query.end || weekend.saturday;
   const [sites] = await pool.query('SELECT * FROM Site ORDER BY number');
   const [reservations] = await pool.query('SELECT * FROM Reservation WHERE NOT (checkOut <= ? OR checkIn >= ?)', [start, end]);
   const reservedSiteIds = new Set(reservations.map(r => r.siteId));
   const availableSites = sites.filter(site => !reservedSiteIds.has(site.id));
-  res.render('admin/availability_report', { availableSites, start, end });
+  res.render('admin/availability_report', { sites: availableSites, start, end, weekend });
 });
 
 // List all sites
