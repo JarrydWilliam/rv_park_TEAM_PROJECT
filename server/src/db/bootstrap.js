@@ -33,6 +33,7 @@ async function ensureSchemaAndSeed(conn) {
     CREATE TABLE IF NOT EXISTS Reservation (
       id INT AUTO_INCREMENT PRIMARY KEY,
       siteId INT NOT NULL,
+      guestId INT,
       guestName VARCHAR(100) NOT NULL,
       guestEmail VARCHAR(255) NOT NULL,
       rigLengthFt INT NOT NULL,
@@ -46,7 +47,10 @@ async function ensureSchemaAndSeed(conn) {
       createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       CONSTRAINT fk_reservation_site
         FOREIGN KEY (siteId) REFERENCES Site(id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+      CONSTRAINT fk_reservation_guest
+        FOREIGN KEY (guestId) REFERENCES users(id)
+        ON DELETE SET NULL
     )
   `);
 

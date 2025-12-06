@@ -266,15 +266,15 @@ router.post('/reserve', async (req, res) => {
     // 6) Confirmation code
     const confirmationCode = Math.random().toString(36).slice(2, 10).toUpperCase();
 
-    // 7) Insert reservation
-    // IMPORTANT: only uses nightlyRate + amountPaid (no bare "amount" column).
+    // 7) Insert reservation with guestId if available
+    const guestId = req.session.user && req.session.user.id ? req.session.user.id : null;
     await pool.query(
       `
         INSERT INTO Reservation
           (siteId, guestName, guestEmail, rigLengthFt,
            checkIn, checkOut, pcs, confirmationCode,
-           nightlyRate, amountPaid, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMED')
+           nightlyRate, amountPaid, status, guestId)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMED', ?)
       `,
       [
         site.id,
@@ -286,7 +286,8 @@ router.post('/reserve', async (req, res) => {
         pcsFlag ? 1 : 0,
         confirmationCode,
         nightlyRate,
-        amountPaid
+        amountPaid,
+        guestId
       ]
     );
 

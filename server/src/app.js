@@ -12,6 +12,7 @@ const systemRoutes = require('./routes/system');
 const paymentsRoutes = require('./routes/payments');
 const reportsRoutes = require('./routes/reports');
 const adminRoutes = require('./routes/admin');
+const guestRoutes = require('./routes/guest');
 
 
 
@@ -36,7 +37,6 @@ app.use(
 // Body parsers
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-
 // Sessions (for login, roles, etc.)
 app.use(
   session({
@@ -49,6 +49,9 @@ app.use(
     },
   })
 );
+
+// Register guest routes after session middlewar
+app.use('/', guestRoutes);
 
 
 app.use((req, res, next) => {
