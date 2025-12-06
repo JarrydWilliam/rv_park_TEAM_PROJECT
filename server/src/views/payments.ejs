@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= title %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body { background-color:#0f131a; color:#fff; }
+    .panel { background:#1c2331; padding:20px; border-radius:10px; }
+    .summary-box { border:1px solid #1a3a80; background:#102040; padding:20px; border-radius:8px; }
+    .amount-box { background:#001a3a; padding:20px; border-radius:6px; font-size:1.3rem; color:#4aa3ff; }
+    .btn-pay { background:#0dc268; border:none; padding:14px; font-size:1.2rem; }
+    .btn-pay:hover { background:#0fbf63; }
+  </style>
+</head>
+
+<body class="container py-4">
+
+  <h1 class="mb-3">💳 Complete Your Payment</h1>
+
+  <!-- Reservation Summary -->
+  <div class="summary-box mb-4">
+    <h4>Reservation Summary</h4>
+
+    <div class="row mt-3">
+      <div class="col-md-4">
+        <strong>Guest Name</strong><br><%= r.guestName %><br>
+        <strong>Email</strong><br><%= r.guestEmail %>
+      </div>
+      <div class="col-md-4"><strong>Site</strong><br><%= r.siteNumber %> (<%= r.siteType %>)</div>
+      <div class="col-md-4"><strong>Nights</strong><br><%= nights %> nights</div>
+    </div>
+
+    <div class="row mt-3">
+      <div class="col-md-6"><strong>Check-In</strong><br><%= new Date(r.checkIn).toDateString() %></div>
+      <div class="col-md-6"><strong>Check-Out</strong><br><%= new Date(r.checkOut).toDateString() %></div>
+    </div>
+  </div>
+
+  <!-- Payment Details -->
+  <div class="panel">
+    <h4>Payment Details</h4>
+
+    <div class="row mt-3">
+      <div class="col-md-6">
+        <label>Nightly Rate</label>
+        <div class="form-control bg-dark text-light">
+          $<%= nightlyRate.toFixed(2) %> × <%= nights %> nights
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <label>Total Amount</label>
+        <div class="amount-box">$<%= totalAmount.toFixed(2) %></div>
+      </div>
+    </div>
+
+    <form method="POST" action="/payments/process" class="mt-4">
+      <input type="hidden" name="reservationId" value="<%= reservationId %>">
+      <input type="hidden" name="amountPaid" value="<%= totalAmount.toFixed(2) %>">
+      <input type="hidden" name="last4" value="1234">
+      <input type="hidden" name="billing" value="Billing Not Required">
+
+      <div class="mb-3">
+        <label>Cardholder Name *</label>
+        <input class="form-control" name="cardholder" required>
+      </div>
+
+      <div class="mb-3">
+        <label>Card Number *</label>
+        <input class="form-control" name="cardnumber" placeholder="1234 5678 9012 3456" required>
+        <small class="text-secondary">Demo only — no actual charge.</small>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label>Expiry *</label>
+          <input class="form-control" name="expiry" placeholder="MM/YY" required>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label>CVV *</label>
+          <input class="form-control" name="cvv" required>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label>Billing Address *</label>
+        <input class="form-control" name="billingAddressInput" required>
+      </div>
+
+      <button class="btn btn-pay w-100">
+
+      <div class="alert alert-warning small mb-3" role="alert">
+        <strong>Payment Disclaimer:</strong> This is a demonstration system. No actual charges will be made. All payment information is for testing purposes only.
+      </div>
+
+      <button class="btn btn-pay w-100">
+        💳 Pay $<%= totalAmount.toFixed(2) %>
+      </button>
+
+      <a href="/" class="btn btn-secondary w-100 mt-3">Cancel</a>
+    </form>
+  </div>
+
+</body>
+</html>
