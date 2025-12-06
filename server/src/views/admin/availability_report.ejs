@@ -1,14 +1,14 @@
-<%-- Availability Report --%>
 <!doctype html>
 <html lang="en">
   <head>
     <%- include('../partials/head', { title: 'Availability Report' }) %>
   </head>
   <body>
+    <% if (typeof currentUser === 'undefined') { currentUser = null; } %>
     <%- include('../partials/nav') %>
     <main class="container py-4">
       <h1 class="h3 mb-3">Availability Report</h1>
-      <p class="text-muted mb-4">Sites available for walk-in guests after hours (weekend: <%= weekend.saturday %> - <%= weekend.sunday %>).</p>
+      <p class="text-muted mb-4">Sites available for walk-in guests after hours (weekend: <%= weekend && weekend.saturday ? weekend.saturday : '-' %> - <%= weekend && weekend.sunday ? weekend.sunday : '-' %>).</p>
       <div class="table-responsive">
         <table class="table table-hover mb-0 align-middle">
           <thead class="table-light">
@@ -26,8 +26,8 @@
             <% } else { %>
               <% sites.forEach(site => { %>
                 <tr>
-                  <td><%= site.number %></td>
-                  <td><%= site.type %></td>
+                  <td><%= site.number || '-' %></td>
+                  <td><%= site.type || '-' %></td>
                   <td><%= site.maxLength || '-' %></td>
                 </tr>
               <% }) %>

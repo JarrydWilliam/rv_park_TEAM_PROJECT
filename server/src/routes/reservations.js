@@ -290,8 +290,14 @@ router.post('/reserve', async (req, res) => {
       ]
     );
 
-    // 8) Redirect to confirmation page
-    res.redirect(`/confirm/${confirmationCode}`);
+    // 8) Get the newly created reservation's ID
+    const [result] = await pool.query('SELECT id FROM Reservation WHERE confirmationCode = ? LIMIT 1', [confirmationCode]);
+    const reservationId = result[0]?.id;
+    if (!reservationId) {
+      return res.status(500).send('Reservation created, but could not find reservation ID for payment.');
+    }
+    // Redirect to payment page
+    res.redirect(`/payments/${reservationId}`);
   } catch (e) {
     res.status(400).send(String(e));
   }
