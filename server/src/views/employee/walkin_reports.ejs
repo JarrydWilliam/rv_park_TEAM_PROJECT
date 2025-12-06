@@ -8,8 +8,41 @@
     <%- include('../partials/nav') %>
     <main class="container py-4">
       <h1 class="h3 mb-3">Walk-in Reports</h1>
-      <p class="text-muted mb-4">Reports and analytics for walk-in reservations.</p>
-      <!-- Table and report content here -->
+      <p class="text-muted mb-4">Currently available sites and how long they are available for.</p>
+      <table class="table table-bordered table-hover">
+        <thead>
+          <tr>
+            <th>Site Number</th>
+            <th>Type</th>
+            <th>Length (ft)</th>
+            <th>Available Until</th>
+            <th>Duration</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% availableSites.forEach(site => { %>
+            <tr>
+              <td><%= site.number %></td>
+              <td><%= site.type %></td>
+              <td><%= site.lengthFt %></td>
+              <td>
+                <% if (site.availableUntil) { %>
+                  <%= site.availableUntil %>
+                <% } else { %>
+                  Indefinite
+                <% } %>
+              </td>
+              <td>
+                <% if (site.durationDays !== null) { %>
+                  <%= site.durationDays %> days
+                <% } else { %>
+                  Indefinite
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
     </main>
     <%- include('../partials/footer') %>
   </body>

@@ -8,8 +8,37 @@
     <%- include('../partials/nav') %>
     <main class="container py-4">
       <h1 class="h3 mb-3">Site Form</h1>
-      <p class="text-muted mb-4">Add or edit RV park site details.</p>
-      <!-- Form content here -->
+      <p class="text-muted mb-4">Add or edit RV park site details. Sites can be archived/disabled instead of deleted to avoid orphaned reservations.</p>
+      <form method="post" action="/admin/sites/save">
+        <div class="mb-3">
+          <label for="number" class="form-label">Site Number</label>
+          <input type="text" class="form-control" id="number" name="number" value="<%= site?.number || '' %>" required>
+        </div>
+        <div class="mb-3">
+          <label for="type" class="form-label">Type</label>
+          <select class="form-select" id="type" name="type" required>
+            <option value="BACK_IN" <%= site?.type === 'BACK_IN' ? 'selected' : '' %>>Back-In</option>
+            <option value="PULL_THRU" <%= site?.type === 'PULL_THRU' ? 'selected' : '' %>>Pull-Thru</option>
+            <option value="TENT" <%= site?.type === 'TENT' ? 'selected' : '' %>>Tent</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="lengthFt" class="form-label">Max Length (ft)</label>
+          <input type="number" class="form-control" id="lengthFt" name="lengthFt" value="<%= site?.lengthFt || '' %>" required>
+        </div>
+        <div class="mb-3">
+          <label for="description" class="form-label">Description</label>
+          <textarea class="form-control" id="description" name="description" rows="2"><%= site?.description || '' %></textarea>
+        </div>
+        <div class="mb-3">
+          <label for="active" class="form-label">Status</label>
+          <select class="form-select" id="active" name="active" required>
+            <option value="1" <%= site?.active ? 'selected' : '' %>>Active</option>
+            <option value="0" <%= site && site.active === 0 ? 'selected' : '' %>>Archived</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Site</button>
+      </form>
     </main>
     <%- include('../partials/footer') %>
   </body>

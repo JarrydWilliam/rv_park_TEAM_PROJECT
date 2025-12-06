@@ -1,3 +1,35 @@
+// GET /admin/walkin_reports
+router.get('/walkin_reports', async (req, res) => {
+  // Get all active sites
+  const [sites] = await pool.query('SELECT * FROM Site WHERE active = 1');
+  // For each site, find the next reservation (if any)
+  const availableSites = await Promise.all(sites.map(async site => {
+    const [[nextRes]] = await pool.query(
+      `SELECT checkIn FROM Reservation WHERE siteId = ? AND checkIn > CURDATE() ORDER BY checkIn ASC LIMIT 1`,
+      [site.id]
+    );
+    let availableUntil = null;
+    let durationDays = null;
+    if (nextRes && nextRes.checkIn) {
+      availableUntil = nextRes.checkIn;
+      // Calculate days until next reservation
+      const today = new Date();
+      const nextDate = new Date(nextRes.checkIn);
+      durationDays = Math.max(0, Math.ceil((nextDate - today) / (1000 * 60 * 60 * 24)));
+    } else {
+      availableUntil = null;
+      durationDays = null;
+    }
+    return {
+      number: site.number,
+      type: site.type,
+      lengthFt: site.lengthFt,
+      availableUntil,
+      durationDays
+    };
+  }));
+  res.render('admin/walkin_reports', { availableSites });
+});
 // server/src/routes/admin.js
 const express = require('express');
 const router = express.Router();
@@ -90,6 +122,33 @@ router.post('/sites/:id/archive', requireRole('admin'), async (req, res) => {
 router.post('/sites/:id/delete', requireRole('admin'), async (req, res) => {
   await pool.query('DELETE FROM Site WHERE id = ?', [req.params.id]);
   res.redirect('/admin/sites');
+});
+
+// GET /admin/walkins/unpaid
+router.get('/walkins/unpaid', async (req, res) => {
+  const [walkins] = await pool.query(`
+    SELECT *,
+      DATEDIFF(checkOut, checkIn) AS nights,
+      nightlyRate * DATEDIFF(checkOut, checkIn) AS totalDue
+    FROM Reservation
+    WHERE source = 'walkin' AND amountPaid < (nightlyRate * DATEDIFF(checkOut, checkIn))
+  `);
+  res.render('admin/unpaid_walkins', { walkins });
+});
+
+// POST /admin/walkins/mark-paid/:id
+router.post('/walkins/mark-paid/:id', async (req, res) => {
+  // Get total due for this reservation
+  const [[reservation]] = await pool.query(
+    `SELECT nightlyRate, DATEDIFF(checkOut, checkIn) AS nights FROM Reservation WHERE id = ?`,
+    [req.params.id]
+  );
+  const totalDue = reservation.nightlyRate * reservation.nights;
+  await pool.query(
+    `UPDATE Reservation SET amountPaid = ? WHERE id = ?`,
+    [totalDue, req.params.id]
+  );
+  res.redirect('/admin/walkins/unpaid');
 });
 
 function hashPassword(password) {

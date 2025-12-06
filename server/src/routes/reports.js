@@ -1,74 +1,80 @@
 ﻿const express = require('express');
 const router = express.Router();
+const pool = require('../db/pool');
 
 // GET /reports - entry page
 router.get('/', (req, res) => {
-  res.send(`
-    <h1>Alpha Reports Demo</h1>
-    <p>This page demonstrates the Reports functional point for the Alpha version.</p>
-    <p>View today's occupancy report here:</p>
-    <p><a href="/reports/occupancy">Daily Occupancy Report</a></p>
-    <p><a href="/">Return to Home</a></p>
-  `);
+  res.render('admin/reports');
 });
 
-// GET /reports/occupancy - mock occupancy report
+// GET /reports/occupancy - real occupancy report
 router.get('/occupancy', async (req, res) => {
   try {
-    // Mock data for Alpha. In the full project, Prisma is used in other routes.
-    const report = [
-      {
-        id: 1,
-        siteId: 'A1',
-        checkIn: '2025-11-18',
-        checkOut: '2025-11-20',
-      },
-      {
-        id: 2,
-        siteId: 'B3',
-        checkIn: '2025-11-19',
-        checkOut: '2025-11-21',
-      },
-    ];
-
-    let rows = report
-      .map((r) => {
-        return `
-          <tr>
-            <td>${r.id}</td>
-            <td>${r.siteId}</td>
-            <td>${r.checkIn}</td>
-            <td>${r.checkOut}</td>
-          </tr>
-        `;
-      })
-      .join('');
-
-    if (!rows) {
-      rows = `<tr><td colspan="4">No reservations found.</td></tr>`;
-    }
-
-    res.send(`
-      <h1>Daily Occupancy Report (Alpha Demo)</h1>
-      <table border="1" cellspacing="0" cellpadding="6">
-        <thead>
-          <tr>
-            <th>Reservation ID</th>
-            <th>Site</th>
-            <th>Check-in</th>
-            <th>Check-out</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows}
-        </tbody>
-      </table>
-      <p><a href="/reports">Back to Reports</a></p>
-      <p><a href="/">Return to Home</a></p>
+    const [rows] = await pool.query(`
+      SELECT r.id, r.siteId, r.checkIn, r.checkOut
+      FROM reservations r
+      ORDER BY r.checkIn DESC
     `);
+    res.render('admin/occupancy_report', { report: rows });
   } catch (err) {
-    console.error('Error generating report (Alpha mock):', err);
+    console.error('Error generating report:', err);
     res.status(500).send('Error generating report');
+  }
+});
+
+// GET /reports/daily - Daily Report: all sites, occupancy status, next check-in
+router.get('/daily', async (req, res) => {
+  try {
+    const [sites] = await pool.query('SELECT * FROM sites');
+    const [reservations] = await pool.query('SELECT * FROM reservations WHERE checkOut >= CURDATE()');
+    // Map site occupancy and next check-in
+    const today = new Date().toISOString().slice(0, 10);
+    const siteStatus = sites.map(site => {
+      // Find current reservation
+      const current = reservations.find(r => r.siteId === site.id && r.checkIn <= today && r.checkOut >= today);
+      // Find next future check-in
+      const future = reservations
+        .filter(r => r.siteId === site.id && r.checkIn > today)
+        .sort((a, b) => new Date(a.checkIn) - new Date(b.checkIn))[0];
+      return {
+        siteId: site.id,
+        siteNumber: site.number,
+        type: site.type,
+        status: current ? 'Occupied' : 'Unoccupied',
+        nextCheckIn: future ? future.checkIn : null
+      };
+    });
+    res.render('admin/daily_report', { sites: siteStatus });
+  } catch (err) {
+    console.error('Error generating daily report:', err);
+    res.status(500).send('Error generating daily report');
+  }
+});
+
+// GET /reports/availability - Availability Report: sites available for walk-ins (not reserved for weekend)
+router.get('/availability', async (req, res) => {
+  try {
+    // Find upcoming weekend dates
+    const now = new Date();
+    const day = now.getDay();
+    const daysUntilSaturday = (6 - day + 7) % 7;
+    const saturday = new Date(now);
+    saturday.setDate(now.getDate() + daysUntilSaturday);
+    const sunday = new Date(saturday);
+    sunday.setDate(saturday.getDate() + 1);
+    const satStr = saturday.toISOString().slice(0, 10);
+    const sunStr = sunday.toISOString().slice(0, 10);
+    // Get all sites
+    const [sites] = await pool.query('SELECT * FROM sites');
+    // Get reservations overlapping weekend
+    const [reserved] = await pool.query('SELECT siteId FROM reservations WHERE (checkIn <= ? AND checkOut >= ?) OR (checkIn <= ? AND checkOut >= ?)', [satStr, satStr, sunStr, sunStr]);
+    const reservedIds = reserved.map(r => r.siteId);
+    // Filter available sites
+    const availableSites = sites.filter(site => !reservedIds.includes(site.id));
+    res.render('admin/availability_report', { sites: availableSites, weekend: { saturday: satStr, sunday: sunStr } });
+  } catch (err) {
+    console.error('Error generating availability report:', err);
+    res.status(500).send('Error generating availability report');
   }
 });
 

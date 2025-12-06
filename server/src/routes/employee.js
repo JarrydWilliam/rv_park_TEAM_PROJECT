@@ -1,3 +1,35 @@
+// GET /employee/walkin_reports
+router.get('/walkin_reports', async (req, res) => {
+  // Get all active sites
+  const [sites] = await pool.query('SELECT * FROM Site WHERE active = 1');
+  // For each site, find the next reservation (if any)
+  const availableSites = await Promise.all(sites.map(async site => {
+    const [[nextRes]] = await pool.query(
+      `SELECT checkIn FROM Reservation WHERE siteId = ? AND checkIn > CURDATE() ORDER BY checkIn ASC LIMIT 1`,
+      [site.id]
+    );
+    let availableUntil = null;
+    let durationDays = null;
+    if (nextRes && nextRes.checkIn) {
+      availableUntil = nextRes.checkIn;
+      // Calculate days until next reservation
+      const today = new Date();
+      const nextDate = new Date(nextRes.checkIn);
+      durationDays = Math.max(0, Math.ceil((nextDate - today) / (1000 * 60 * 60 * 24)));
+    } else {
+      availableUntil = null;
+      durationDays = null;
+    }
+    return {
+      number: site.number,
+      type: site.type,
+      lengthFt: site.lengthFt,
+      availableUntil,
+      durationDays
+    };
+  }));
+  res.render('employee/walkin_reports', { availableSites });
+});
 const express = require('express');
 const router = express.Router();
 const pool = require('../db/pool');
