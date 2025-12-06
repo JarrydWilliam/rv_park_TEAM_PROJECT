@@ -25,7 +25,7 @@ router.post('/login', async (req, res) => {
 
   try {
     const [rows] = await pool.query(
-      'SELECT id, username, password_hash, role, first_name, last_name FROM users WHERE username = ?',
+      'SELECT id, username, email, password_hash, role, first_name, last_name FROM users WHERE username = ?',
       [username]
     );
 
@@ -44,6 +44,7 @@ router.post('/login', async (req, res) => {
     req.session.user = {
       id: user.id,
       username: user.username,
+      email: user.email,
       role: user.role,
       firstName: user.first_name,
       lastName: user.last_name,

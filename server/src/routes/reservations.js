@@ -13,6 +13,47 @@ const {
 const router = express.Router();
 
 /**
+ * GET /reservations/:id/edit
+ * Render the edit reservation form.
+ */
+router.get('/reservations/:id/edit', async (req, res) => {
+  const id = Number(req.params.id);
+  const [resRows] = await pool.query('SELECT * FROM Reservation WHERE id = ? LIMIT 1', [id]);
+  const r = resRows[0];
+  if (!r) {
+    return res.status(404).send('Reservation not found.');
+  }
+  res.render('edit_reservation', { r });
+});
+
+/**
+ * POST /reservations/:id/edit
+ * Update reservation details.
+ */
+router.post('/reservations/:id/edit', async (req, res) => {
+  const id = Number(req.params.id);
+  const { checkIn, checkOut, guestName, guestEmail, rigLengthFt, type } = req.body;
+  // Validate dates
+  const checkInDate = toDate(checkIn);
+  const checkOutDate = toDate(checkOut);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  if (checkInDate < today) {
+    return res.status(400).send('Check-in date cannot be before today.');
+  }
+  if (checkOutDate <= checkInDate) {
+    return res.status(400).send('Check-out date must be after check-in date.');
+  }
+  // Update reservation
+  await pool.query(
+    'UPDATE Reservation SET checkIn = ?, checkOut = ?, guestName = ?, guestEmail = ?, rigLengthFt = ?, type = ? WHERE id = ?',
+    [checkInDate, checkOutDate, guestName, guestEmail, rigLengthFt, type, id]
+  );
+  // Redirect to confirmation page
+  res.redirect(`/confirm/${req.params.id}`);
+});
+
+/**
  * GET /reserve/new
  * Step 2 of the "hotel-style" flow:
  *  - User has already searched for availability.

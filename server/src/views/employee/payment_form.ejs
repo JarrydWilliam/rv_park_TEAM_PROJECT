@@ -1,0 +1,33 @@
+<%-- Payment Form --%>
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/head', { title: 'Payment Form' }) %>
+  </head>
+  <body>
+    <%- include('../partials/nav') %>
+    <main class="container py-4">
+      <h1 class="h3 mb-3">Payment Form</h1>
+      <p class="text-muted mb-4">Process payments for reservations and walk-ins. For front desk or phone reservations, mark payment as already taken.</p>
+      <form method="post" action="/employee/payments/process">
+        <div class="mb-3">
+          <label for="reservationId" class="form-label">Reservation ID</label>
+          <input type="text" class="form-control" id="reservationId" name="reservationId" required>
+        </div>
+        <div class="mb-3">
+          <label for="amount" class="form-label">Amount</label>
+          <input type="number" class="form-control" id="amount" name="amount" required>
+        </div>
+        <div class="mb-3">
+          <label for="paymentStatus" class="form-label">Payment Status</label>
+          <select class="form-select" id="paymentStatus" name="paymentStatus" required>
+            <option value="taken">Already Taken (Front Desk/Phone)</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Record Payment</button>
+      </form>
+    </main>
+    <%- include('../partials/footer') %>
+  </body>
+</html>

@@ -118,11 +118,13 @@
                       </span>
                     </td>
                     <td class="text-end">
-                      <form method="get" action="/reserve/new" class="d-inline">
+                      <form method="post" action="/reserve" class="d-inline">
                         <input type="hidden" name="siteId" value="<%= s.id %>">
+                        <input type="hidden" name="guestName" value="Guest">
+                        <input type="hidden" name="guestEmail" value="guest@email.com">
+                        <input type="hidden" name="rigLengthFt" value="<%= query.rig_length %>">
                         <input type="hidden" name="check_in" value="<%= query.check_in %>">
                         <input type="hidden" name="check_out" value="<%= query.check_out %>">
-                        <input type="hidden" name="rig_length" value="<%= query.rig_length %>">
                         <input type="hidden" name="type" value="<%= query.type || '' %>">
                         <button type="submit" class="btn btn-sm btn-primary">
                           Reserve

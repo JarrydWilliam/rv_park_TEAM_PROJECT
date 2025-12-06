@@ -20,10 +20,11 @@ async function ensureSchemaAndSeed(conn) {
     CREATE TABLE IF NOT EXISTS Site (
       id INT AUTO_INCREMENT PRIMARY KEY,
       number VARCHAR(10) NOT NULL,
-      type ENUM('BACK_IN','PULL_THRU') NOT NULL,
+      type ENUM('BACK_IN','PULL_THRU','TENT') NOT NULL,
       lengthFt INT NOT NULL,
       description VARCHAR(255),
-      active TINYINT(1) NOT NULL DEFAULT 1
+      active TINYINT(1) NOT NULL DEFAULT 1,
+      UNIQUE(number)
     )
   `);
 
@@ -53,7 +54,7 @@ async function ensureSchemaAndSeed(conn) {
   await conn.query(`
     CREATE TABLE IF NOT EXISTS RatePlan (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      siteType ENUM('BACK_IN','PULL_THRU') NOT NULL,
+      siteType ENUM('BACK_IN','PULL_THRU','TENT') NOT NULL,
       nightlyRate DECIMAL(10,2) NOT NULL,
       startDate DATE NOT NULL,
       endDate DATE NOT NULL,
@@ -81,12 +82,48 @@ async function ensureSchemaAndSeed(conn) {
   );
   if (siteCountRows[0].cnt === 0) {
     await conn.query(`
-      INSERT INTO Site (number, type, lengthFt, description, active)
-      VALUES
-        ('A1','BACK_IN',30,'Back-in, 30ft pad',1),
-        ('A2','BACK_IN',35,'Back-in, 35ft pad',1),
-        ('B1','PULL_THRU',40,'Pull-through, 40ft pad',1),
-        ('B2','PULL_THRU',45,'Pull-through, 45ft pad',1)
+      INSERT INTO Site (number, type, lengthFt, description, active) VALUES
+        ('1','BACK_IN',55,'Extra deep back-in, 55ft',1),
+        ('2','BACK_IN',42,'Back-in, 42ft',1),
+        ('3','BACK_IN',43,'Back-in, 43ft',1),
+        ('4','BACK_IN',42,'Back-in, 42ft',1),
+        ('5','BACK_IN',43,'Back-in, 43ft',1),
+        ('6','BACK_IN',42,'Back-in, 42ft',1),
+        ('7','BACK_IN',43,'Back-in, 43ft',1),
+        ('8','BACK_IN',42,'Back-in, 42ft',1),
+        ('9','BACK_IN',43,'Back-in, 43ft',1),
+        ('10','BACK_IN',42,'Back-in, 42ft',1),
+        ('11','BACK_IN',43,'Back-in, 43ft',1),
+        ('12','BACK_IN',42,'Back-in, 42ft',1),
+        ('13','BACK_IN',43,'Back-in, 43ft',1),
+        ('14','BACK_IN',42,'Back-in, 42ft',1),
+        ('15','PULL_THRU',43,'Pull-thru, 43ft',1),
+        ('16','PULL_THRU',45,'Pull-thru, 45ft',1),
+        ('17','PULL_THRU',55,'Extra deep pull-thru, 55ft',1),
+        ('18','PULL_THRU',45,'Pull-thru, 45ft',1),
+        ('19','PULL_THRU',55,'Extra deep pull-thru, 55ft',1),
+        ('20','PULL_THRU',45,'Pull-thru, 45ft',1),
+        ('21','PULL_THRU',55,'Extra deep pull-thru, 55ft',1),
+        ('22','PULL_THRU',45,'Pull-thru, 45ft',1),
+        ('23','PULL_THRU',46,'Pull-thru, 46ft',1),
+        ('24','PULL_THRU',45,'Pull-thru, 45ft',1),
+        ('25','PULL_THRU',46,'Pull-thru, 46ft',1),
+        ('26','PULL_THRU',45,'Pull-thru, 45ft',1),
+        ('27','PULL_THRU',46,'Pull-thru, 46ft',1),
+        ('28','PULL_THRU',45,'Pull-thru, 45ft',1),
+        ('29','PULL_THRU',46,'Pull-thru, 46ft',1),
+        ('30','PULL_THRU',45,'Pull-thru, 45ft',1),
+        ('31','PULL_THRU',46,'Pull-thru, 46ft',1),
+        ('32','PULL_THRU',65,'Pull-thru, 65ft',1),
+        ('33','PULL_THRU',65,'Pull-thru, 65ft',1),
+        ('34','PULL_THRU',65,'Pull-thru, 65ft',1),
+        ('35','PULL_THRU',65,'Pull-thru, 65ft',1),
+        ('36','PULL_THRU',65,'Pull-thru, 65ft',1),
+        ('37','PULL_THRU',65,'Pull-thru, 65ft',1),
+        ('38','PULL_THRU',65,'Pull-thru, 65ft',1),
+        ('39','PULL_THRU',65,'Pull-thru, 65ft',1),
+        ('40','PULL_THRU',65,'Pull-thru, 65ft',1),
+        ('41','TENT',0,'Tent site',1)
     `);
     console.log('✅ Seeded Site table.');
   }
@@ -100,7 +137,8 @@ async function ensureSchemaAndSeed(conn) {
       INSERT INTO RatePlan (siteType, nightlyRate, startDate, endDate, active)
       VALUES
         ('BACK_IN',30.00,'2025-01-01','2025-12-31',1),
-        ('PULL_THRU',40.00,'2025-01-01','2025-12-31',1)
+        ('PULL_THRU',40.00,'2025-01-01','2025-12-31',1),
+        ('TENT',17.00,'2025-01-01','2025-12-31',1)
     `);
     console.log('✅ Seeded RatePlan table.');
   }

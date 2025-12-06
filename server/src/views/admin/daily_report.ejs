@@ -1,0 +1,45 @@
+<%-- Daily Report --%>
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/head', { title: 'Daily Report' }) %>
+  </head>
+  <body>
+    <%- include('../partials/nav') %>
+    <main class="container py-4">
+      <h1 class="h3 mb-3">Daily Report</h1>
+      <p class="text-muted mb-4">Shows all sites with current occupancy status and next check-in date.</p>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Site Number</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Next Check-In</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!sites || sites.length === 0) { %>
+              <tr>
+                <td colspan="4" class="text-center text-muted py-4">No sites found.</td>
+              </tr>
+            <% } else { %>
+              <% sites.forEach(site => { %>
+                <tr>
+                  <td><%= site.siteNumber %></td>
+                  <td><%= site.type %></td>
+                  <td>
+                    <span class="badge <%= site.status === 'Occupied' ? 'bg-danger' : 'bg-success' %>"><%= site.status %></span>
+                  </td>
+                  <td><%= site.nextCheckIn || '-' %></td>
+                </tr>
+              <% }) %>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </main>
+    <%- include('../partials/footer') %>
+  </body>
+</html>

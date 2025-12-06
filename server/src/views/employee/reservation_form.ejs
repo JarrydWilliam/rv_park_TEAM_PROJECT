@@ -1,0 +1,41 @@
+<%-- Reservation Form --%>
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/head', { title: 'Reservation Form' }) %>
+  </head>
+  <body>
+    <%- include('../partials/nav') %>
+    <main class="container py-4">
+      <h1 class="h3 mb-3">Reservation Form</h1>
+      <p class="text-muted mb-4">Create or edit reservations for guests. This form is for front desk or phone reservations.</p>
+      <form method="post" action="/employee/reservations/create">
+        <div class="mb-3">
+          <label for="guestName" class="form-label">Guest Name</label>
+          <input type="text" class="form-control" id="guestName" name="guestName" required>
+        </div>
+        <div class="mb-3">
+          <label for="siteNumber" class="form-label">Site Number</label>
+          <input type="number" class="form-control" id="siteNumber" name="siteNumber" required>
+        </div>
+        <div class="mb-3">
+          <label for="checkIn" class="form-label">Check-In Date</label>
+          <input type="date" class="form-control" id="checkIn" name="checkIn" required>
+        </div>
+        <div class="mb-3">
+          <label for="checkOut" class="form-label">Check-Out Date</label>
+          <input type="date" class="form-control" id="checkOut" name="checkOut" required>
+        </div>
+        <div class="mb-3">
+          <label for="paymentStatus" class="form-label">Payment Status</label>
+          <select class="form-select" id="paymentStatus" name="paymentStatus" required>
+            <option value="taken">Already Taken (Front Desk/Phone)</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Reservation</button>
+      </form>
+    </main>
+    <%- include('../partials/footer') %>
+  </body>
+</html>

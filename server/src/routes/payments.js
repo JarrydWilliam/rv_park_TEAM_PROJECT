@@ -82,10 +82,17 @@ router.post("/process", async (req, res) => {
             [reservationId]
         );
 
+        // Fetch reservation for confirmation page
+        const [rows] = await pool.query(
+            `SELECT * FROM Reservation WHERE id = ? LIMIT 1`,
+            [reservationId]
+        );
+        const r = rows[0] || {};
         res.render("confirm", {
             title: "Payment Confirmed",
             message: `Your payment of $${amountPaid} has been processed successfully!`,
-            txnId
+            txnId,
+            r
         });
 
     } catch (err) {

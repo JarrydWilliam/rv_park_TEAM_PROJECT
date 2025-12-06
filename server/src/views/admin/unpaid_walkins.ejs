@@ -1,0 +1,57 @@
+<%-- Unpaid Walk-ins --%>
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/head', { title: 'Unpaid Walk-ins' }) %>
+  </head>
+  <body>
+    <%- include('../partials/nav') %>
+    <main class="container py-4">
+      <h1 class="h3 mb-3">Unpaid Walk-in Reservations</h1>
+      <p class="text-muted mb-4">List and mark walk-in reservations that have not been paid.</p>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Guest Name</th>
+              <th>Site</th>
+              <th>Check-In</th>
+              <th>Check-Out</th>
+              <th>Paid</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!walkins || walkins.length === 0) { %>
+              <tr>
+                <td colspan="6" class="text-center text-muted py-4">No unpaid walk-in reservations found.</td>
+              </tr>
+            <% } else { %>
+              <% walkins.forEach(r => { %>
+                <tr>
+                  <td><%= r.guestName %></td>
+                  <td><%= r.siteId %></td>
+                  <td><%= r.checkIn %></td>
+                  <td><%= r.checkOut %></td>
+                  <td>
+                    <span class="badge <%= r.paid ? 'bg-success' : 'bg-warning' %>"><%= r.paid ? 'Paid' : 'Unpaid' %></span>
+                  </td>
+                  <td>
+                    <% if (!r.paid) { %>
+                      <form method="post" action="/admin/walkins/mark-paid/<%= r.id %>">
+                        <button type="submit" class="btn btn-sm btn-primary">Mark as Paid</button>
+                      </form>
+                    <% } else { %>
+                      <span class="text-success">✔</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </main>
+    <%- include('../partials/footer') %>
+  </body>
+</html>
