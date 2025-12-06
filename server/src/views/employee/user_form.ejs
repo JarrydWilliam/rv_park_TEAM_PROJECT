@@ -1,0 +1,38 @@
+<%-- User Form --%>
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/head', { title: 'User Form' }) %>
+  </head>
+  <body>
+    <%- include('../partials/nav') %>
+    <main class="container py-4">
+      <h1 class="h3 mb-3">Add Guest User</h1>
+      <p class="text-muted mb-4">Add a new guest user to the system.</p>
+      <form method="post" action="/employee/users/create">
+        <div class="mb-3">
+          <label for="username" class="form-label">Username</label>
+          <input type="text" class="form-control" id="username" name="username" required>
+        </div>
+        <div class="mb-3">
+          <label for="email" class="form-label">Email</label>
+          <input type="email" class="form-control" id="email" name="email" required>
+        </div>
+        <div class="mb-3">
+          <label for="firstName" class="form-label">First Name</label>
+          <input type="text" class="form-control" id="firstName" name="firstName" required>
+        </div>
+        <div class="mb-3">
+          <label for="lastName" class="form-label">Last Name</label>
+          <input type="text" class="form-control" id="lastName" name="lastName" required>
+        </div>
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Guest User</button>
+      </form>
+    </main>
+    <%- include('../partials/footer') %>
+  </body>
+</html>

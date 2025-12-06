@@ -1,0 +1,65 @@
+<%-- Reservations --%>
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/head', { title: 'Reservations' }) %>
+  </head>
+  <body>
+    <%- include('../partials/nav') %>
+    <main class="container py-4">
+      <h1 class="h3 mb-3">Reservations</h1>
+      <p class="text-muted mb-4">View and manage all current reservations, including walk-ins, phone reservations, and those with unfulfilled payments.</p>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Guest Name</th>
+              <th>Site</th>
+              <th>Check-In</th>
+              <th>Check-Out</th>
+              <th>Type</th>
+              <th>Payment Status</th>
+              <th>Source</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!reservations || reservations.length === 0) { %>
+              <tr>
+                <td colspan="9" class="text-center text-muted py-4">
+                  No reservations found.
+                </td>
+              </tr>
+            <% } else { %>
+              <% reservations.forEach(r => { %>
+                <tr>
+                  <td><%= r.id %></td>
+                  <td><%= r.guestName %></td>
+                  <td><%= r.siteNumber %></td>
+                  <td><%= r.checkIn %></td>
+                  <td><%= r.checkOut %></td>
+                  <td><%= r.type %></td>
+                  <td>
+                    <span class="badge <%= r.paymentStatus === 'taken' ? 'bg-success' : 'bg-warning' %>">
+                      <%= r.paymentStatus === 'taken' ? 'Paid' : 'Unfulfilled' %>
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge <%= r.source === 'walkin' ? 'bg-info' : r.source === 'phone' ? 'bg-primary' : 'bg-secondary' %>">
+                      <%= r.source %>
+                    </span>
+                  </td>
+                  <td>
+                    <a href="/employee/edit-reservation/<%= r.id %>" class="btn btn-sm btn-outline-primary">Edit</a>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </main>
+    <%- include('../partials/footer') %>
+  </body>
+</html>
