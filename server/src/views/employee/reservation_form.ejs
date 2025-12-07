@@ -6,34 +6,115 @@
   <body>
     <%- include('../partials/nav') %>
     <main class="container py-4">
+            <% if (error) { %>
+              <div class="alert alert-danger mb-4">
+                <i class="bi bi-exclamation-triangle me-2"></i><%= error %>
+              </div>
+            <% } %>
       <h1 class="h3 mb-3">Reservation Form</h1>
-      <p class="text-muted mb-4">Create or edit reservations for guests. This form is for front desk or phone reservations.</p>
-      <form method="post" action="/employee/reservations/create">
-        <div class="mb-3">
-          <label for="guestName" class="form-label">Guest Name</label>
-          <input type="text" class="form-control" id="guestName" name="guestName" required>
+      <p class="text-muted mb-4">Create a reservation for the selected guest. Guest info is read-only.</p>
+      <h1 class="h3 mb-3">Reservation Form</h1>
+      <p class="text-muted mb-4">Create a reservation for the selected guest. Guest info is read-only.</p>
+      <% if (guest) { %>
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Guest Information</h5>
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label class="form-label">Name</label>
+                <input type="text" class="form-control" value="<%= guest.first_name %> <%= guest.last_name %>" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Email</label>
+                <input type="text" class="form-control" value="<%= guest.email %>" readonly>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">DoD Affiliation</label>
+                <input type="text" class="form-control" value="<%= guest.dod_affiliation %>" readonly>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Branch</label>
+                <input type="text" class="form-control" value="<%= guest.branch %>" readonly>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Rank/Grade</label>
+                <input type="text" class="form-control" value="<%= guest.rank_grade %>" readonly>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Adults</label>
+                <input type="text" class="form-control" value="<%= guest.num_adults %>" readonly>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Pets</label>
+                <input type="text" class="form-control" value="<%= guest.num_pets %>" readonly>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Pet Notes</label>
+                <input type="text" class="form-control" value="<%= guest.pet_breed_notes %>" readonly>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="mb-3">
-          <label for="siteNumber" class="form-label">Site Number</label>
-          <input type="number" class="form-control" id="siteNumber" name="siteNumber" required>
+      <% } %>
+      <form method="get" action="/employee/reservations/new" class="row g-3 align-items-end">
+        <input type="hidden" name="userId" value="<%= userId %>">
+        <div class="col-md-4">
+          <label class="form-label">Check-In Date</label>
+          <input type="date" class="form-control" name="checkIn" value="<%= checkIn || '' %>" required>
         </div>
-        <div class="mb-3">
-          <label for="checkIn" class="form-label">Check-In Date</label>
-          <input type="date" class="form-control" id="checkIn" name="checkIn" required>
+        <div class="col-md-4">
+          <label class="form-label">Check-Out Date</label>
+          <input type="date" class="form-control" name="checkOut" value="<%= checkOut || '' %>" required>
         </div>
-        <div class="mb-3">
-          <label for="checkOut" class="form-label">Check-Out Date</label>
-          <input type="date" class="form-control" id="checkOut" name="checkOut" required>
+        <div class="col-md-4">
+          <label class="form-label">RV Length (ft)</label>
+          <input type="number" class="form-control" name="rigLengthFt" min="0" value="<%= rigLengthFt || '' %>" required>
         </div>
-        <div class="mb-3">
-          <label for="paymentStatus" class="form-label">Payment Status</label>
-          <select class="form-select" id="paymentStatus" name="paymentStatus" required>
-            <option value="taken">Already Taken (Front Desk/Phone)</option>
-            <option value="pending">Pending</option>
-          </select>
+        <div class="col-md-12 d-grid">
+          <button type="submit" class="btn btn-primary">Search Available Sites</button>
         </div>
-        <button type="submit" class="btn btn-primary">Create Reservation</button>
       </form>
+      <% if (availableSites && availableSites.length) { %>
+        <hr>
+        <h4>Available Sites</h4>
+        <div class="table-responsive card card-elevated">
+          <table class="table table-dark table-hover table-striped align-middle mb-0">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Type</th>
+                <th>Length (ft)</th>
+                <th>Description</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% availableSites.forEach(site => { %>
+                <tr>
+                  <td><%= site.number %></td>
+                  <td><%= site.type %></td>
+                  <td><%= site.lengthFt %></td>
+                  <td><%= site.description %></td>
+                  <td class="text-end">
+                    <form method="post" action="/employee/reservations/new">
+                      <input type="hidden" name="userId" value="<%= userId %>">
+                      <input type="hidden" name="siteId" value="<%= site.id %>">
+                      <input type="hidden" name="checkIn" value="<%= checkIn %>">
+                      <input type="hidden" name="checkOut" value="<%= checkOut %>">
+                      <input type="hidden" name="rigLengthFt" value="<%= rigLengthFt %>">
+                      <button type="submit" class="btn btn-sm btn-success">Reserve</button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } else if (checkIn && checkOut && rigLengthFt) { %>
+        <p class="text-muted mt-4">No sites matched your search.</p>
+      <% } %>
+  </body>
+</html>
     </main>
     <%- include('../partials/footer') %>
   </body>

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/head', { title: 'Select or Create Customer' }) %>
+  </head>
+  <body>
+    <%- include('../partials/nav') %>
+    <main class="container py-4">
+      <h1 class="h3 mb-3">Reserve Site for Customer</h1>
+      <p class="text-muted mb-4">Select an existing customer or create a new account.</p>
+      <form method="get" action="/employee/reservations/new">
+        <div class="mb-3">
+          <label for="userId" class="form-label">Search for Customer</label>
+          <select id="userId" name="userId" class="form-select" required>
+            <option value="">Type to search...</option>
+            <% customers.forEach(function(cust) { %>
+              <option value="<%= cust.id %>">
+                <%= cust.first_name %> <%= cust.last_name %> (<%= cust.email %>, <%= cust.username %>)
+              </option>
+            <% }) %>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Select Customer</button>
+      </form>
+      <hr>
+      <form method="get" action="/employee/users/new">
+        <button type="submit" class="btn btn-secondary">Create New Customer Account</button>
+      </form>
+    </main>
+    <%- include('../partials/footer') %>
+    <script>
+      // Basic client-side search for dropdown
+      document.getElementById('userId').addEventListener('input', function(e) {
+        var filter = e.target.value.toLowerCase();
+        var options = e.target.options;
+        for (var i = 0; i < options.length; i++) {
+          var txt = options[i].text.toLowerCase();
+          options[i].style.display = txt.includes(filter) ? '' : 'none';
+        }
+      });
+    </script>
+  </body>
+</html>
