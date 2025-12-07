@@ -12,7 +12,7 @@ router.get('/occupancy', async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT r.id, r.siteId, r.checkIn, r.checkOut
-      FROM reservations r
+      FROM Reservation r
       ORDER BY r.checkIn DESC
     `);
     res.render('admin/occupancy_report', { report: rows });
@@ -25,8 +25,8 @@ router.get('/occupancy', async (req, res) => {
 // GET /reports/daily - Daily Report: all sites, occupancy status, next check-in
 router.get('/daily', async (req, res) => {
   try {
-    const [sites] = await pool.query('SELECT * FROM sites');
-    const [reservations] = await pool.query('SELECT * FROM reservations WHERE checkOut >= CURDATE()');
+    const [sites] = await pool.query('SELECT * FROM Site');
+    const [reservations] = await pool.query('SELECT * FROM Reservation WHERE checkOut >= CURDATE()');
     // Map site occupancy and next check-in
     const today = new Date().toISOString().slice(0, 10);
     const siteStatus = sites.map(site => {
@@ -65,9 +65,9 @@ router.get('/availability', async (req, res) => {
     const satStr = saturday.toISOString().slice(0, 10);
     const sunStr = sunday.toISOString().slice(0, 10);
     // Get all sites
-    const [sites] = await pool.query('SELECT * FROM sites');
+    const [sites] = await pool.query('SELECT * FROM Site');
     // Get reservations overlapping weekend
-    const [reserved] = await pool.query('SELECT siteId FROM reservations WHERE (checkIn <= ? AND checkOut >= ?) OR (checkIn <= ? AND checkOut >= ?)', [satStr, satStr, sunStr, sunStr]);
+    const [reserved] = await pool.query('SELECT siteId FROM Reservation WHERE (checkIn <= ? AND checkOut >= ?) OR (checkIn <= ? AND checkOut >= ?)', [satStr, satStr, sunStr, sunStr]);
     const reservedIds = reserved.map(r => r.siteId);
     // Filter available sites
     const availableSites = sites.filter(site => !reservedIds.includes(site.id));
