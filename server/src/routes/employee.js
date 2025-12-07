@@ -323,7 +323,7 @@ router.get('/reservations', requireRole('employee'), async (req, res) => {
 // (Legacy) Simple reservation creation – left in place in case templates depend on it
 router.get('/reservations/new', requireRole('employee'), async (req, res) => {
   const [sites] = await pool.query('SELECT * FROM Site WHERE active = 1');
-  res.render('employee/reservation_form', { reservation: null, sites });
+  res.render('employee/reservation_form', { reservation: null, sites, currentUser: req.session.user || null });
 });
 
 router.post('/reservations/new', requireRole('employee'), async (req, res) => {
@@ -346,9 +346,12 @@ router.get('/reservations/:id/edit', requireRole('employee'), async (req, res) =
   ]);
   const reservation = rows[0];
   if (!reservation) return res.status(404).send('Reservation not found');
-
-  const [sites] = await pool.query('SELECT * FROM Site WHERE active = 1');
-  res.render('employee/reservation_form', { reservation, sites });
+  let guest = null;
+  if (reservation.guestId) {
+    const [guests] = await pool.query('SELECT * FROM users WHERE id = ?', [reservation.guestId]);
+    guest = guests[0] || null;
+  }
+  res.render('employee/edit_reservation', { reservation, guest, currentUser: req.session.user || null });
 });
 
 router.post('/reservations/:id/edit', requireRole('employee'), async (req, res) => {
@@ -377,11 +380,11 @@ router.post('/reservations/:id/cancel', requireRole('employee'), async (req, res
 // Employee user management (older User table – likely unused, left for compatibility)
 router.get('/users', requireRole('employee'), async (req, res) => {
   const [users] = await pool.query('SELECT * FROM User');
-  res.render('employee/users', { users });
+  res.render('employee/users', { users, currentUser: req.session.user || null });
 });
 
 router.get('/users/new', requireRole('employee'), (req, res) => {
-  res.render('employee/user_form', { user: null });
+  res.render('employee/user_form', { user: null, currentUser: req.session.user || null });
 });
 
 router.post('/users/new', requireRole('employee'), async (req, res) => {
@@ -397,7 +400,7 @@ router.get('/users/:id/edit', requireRole('employee'), async (req, res) => {
   const [rows] = await pool.query('SELECT * FROM User WHERE id = ?', [req.params.id]);
   const user = rows[0];
   if (!user) return res.status(404).send('User not found');
-  res.render('employee/user_form', { user });
+  res.render('employee/user_form', { user, currentUser: req.session.user || null });
 });
 
 router.post('/users/:id/edit', requireRole('employee'), async (req, res) => {
@@ -425,6 +428,13 @@ router.get('/sites', requireRole('employee'), async (req, res) => {
     console.error('Error loading sites for employee:', err);
     res.status(500).send('Unable to load sites.');
   }
+});
+
+// Mark reservation as paid (cannot revert)
+router.post('/reservations/:id/mark-paid', requireRole('employee'), async (req, res) => {
+  const reservationId = Number(req.params.id);
+  await pool.query('UPDATE Reservation SET paid = 1 WHERE id = ?', [reservationId]);
+  res.redirect(`/employee/reservations/${reservationId}/edit`);
 });
 
 module.exports = router;

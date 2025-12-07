@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/head', { title: 'Edit Reservation' }) %>
+  </head>
+  <body>
+    <%- include('../partials/nav') %>
+    <main class="container py-4">
+      <h1 class="h3 mb-3">Edit Reservation</h1>
+      <% if (reservation && guest) { %>
+        <div class="mb-3">
+          <label class="form-label">Reservation ID</label>
+          <input type="text" class="form-control" value="<%= reservation.id %>" readonly>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Guest Name</label>
+          <input type="text" class="form-control" value="<%= guest.first_name %> <%= guest.last_name %>" readonly>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Guest Email</label>
+          <input type="text" class="form-control" value="<%= guest.email %>" readonly>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Paid Status</label>
+          <span class="badge <%= reservation.paid ? 'bg-success' : 'bg-warning' %>"><%= reservation.paid ? 'Paid' : 'Unpaid' %></span>
+        </div>
+        <% if (!reservation.paid) { %>
+          <form method="post" action="/employee/reservations/<%= reservation.id %>/mark-paid">
+            <button type="submit" class="btn btn-success">Mark as Paid</button>
+          </form>
+        <% } %>
+        <div class="alert alert-info mt-3">Any changes made here will affect the guest's reservation.</div>
+      <% } else { %>
+        <div class="alert alert-danger">Reservation or guest not found.</div>
+      <% } %>
+    </main>
+    <%- include('../partials/footer') %>
+  </body>
+</html>
