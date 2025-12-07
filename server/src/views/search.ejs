@@ -35,6 +35,7 @@
                 name="check_in"
                 class="form-control"
                 value="<%= (query && query.check_in) || '' %>"
+                min="<%= todayIso %>"
                 required
               >
             </div>
@@ -45,6 +46,7 @@
                 name="check_out"
                 class="form-control"
                 value="<%= (query && query.check_out) || '' %>"
+                min="<%= todayIso %>"
                 required
               >
             </div>
@@ -132,6 +134,31 @@
         <p class="text-muted mt-4">No sites matched your search.</p>
       <% } %>
     </main>
+
+    <script>
+      (function () {
+        const checkInInput = document.querySelector('input[name="check_in"]');
+        const checkOutInput = document.querySelector('input[name="check_out"]');
+        if (!checkInInput || !checkOutInput) return;
+
+        const today = '<%= todayIso %>';
+        checkInInput.min = today;
+        checkOutInput.min = today;
+
+        checkInInput.addEventListener('change', function () {
+          const inVal = checkInInput.value;
+          if (inVal) {
+            // checkout cannot be before check-in
+            checkOutInput.min = inVal;
+            if (checkOutInput.value && checkOutInput.value <= inVal) {
+              checkOutInput.value = '';
+            }
+          } else {
+            checkOutInput.min = today;
+          }
+        });
+      })();
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   </body>

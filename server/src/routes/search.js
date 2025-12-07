@@ -1,5 +1,3 @@
-// server/src/routes/search.js
-
 const express = require('express');
 const { parseISO, startOfToday, addDays, format } = require('date-fns');
 const pool = require('../db/pool');
@@ -87,18 +85,22 @@ async function findAvailableSites({ checkIn, checkOut, rigLength, type, orderBy 
 // Home: empty form
 router.get('/', async (req, res) => {
   const rigBounds = await getRigBounds();
+  const todayIso = format(startOfToday(), 'yyyy-MM-dd');
 
   res.render('search', {
     results: null,
     query: {},
     error: null,
-    rigBounds
+    rigBounds,
+    todayIso
   });
 });
 
 // Standard search via form submit
 router.get('/search', async (req, res) => {
   const rigBounds = await getRigBounds();
+  const today = startOfToday();
+  const todayIso = format(today, 'yyyy-MM-dd');
 
   try {
     const { check_in, check_out, rig_length, type } = req.query;
@@ -108,13 +110,48 @@ router.get('/search', async (req, res) => {
         results: null,
         query: req.query,
         error: 'Please provide check-in, check-out, and rig length.',
-        rigBounds
+        rigBounds,
+        todayIso
       });
     }
 
     const rigLength = parseInt(rig_length, 10);
-    const checkIn = parseISO(check_in);
-    const checkOut = parseISO(check_out);
+
+    let checkIn, checkOut;
+    try {
+      checkIn = parseISO(check_in);
+      checkOut = parseISO(check_out);
+    } catch (err) {
+      return res.render('search', {
+        results: null,
+        query: req.query,
+        error: 'One or both dates are invalid.',
+        rigBounds,
+        todayIso
+      });
+    }
+
+    // Check-in cannot be in the past
+    if (checkIn < today) {
+      return res.render('search', {
+        results: null,
+        query: req.query,
+        error: 'Check-in date cannot be in the past.',
+        rigBounds,
+        todayIso
+      });
+    }
+
+    // Check-out must be after check-in
+    if (checkOut <= checkIn) {
+      return res.render('search', {
+        results: null,
+        query: req.query,
+        error: 'Check-out date must be after the check-in date.',
+        rigBounds,
+        todayIso
+      });
+    }
 
     const results = await findAvailableSites({
       checkIn,
@@ -124,13 +161,20 @@ router.get('/search', async (req, res) => {
       orderBy: 'lengthFt'
     });
 
-    res.render('search', { results, query: req.query, error: null, rigBounds });
+    res.render('search', {
+      results,
+      query: req.query,
+      error: null,
+      rigBounds,
+      todayIso
+    });
   } catch (e) {
     res.render('search', {
       results: null,
       query: req.query,
       error: String(e),
-      rigBounds
+      rigBounds,
+      todayIso
     });
   }
 });
@@ -146,6 +190,7 @@ router.get('/vacancy', async (req, res) => {
 
   try {
     const today = startOfToday();
+    const todayIso = format(today, 'yyyy-MM-dd');
     const defaultIn = format(today, 'yyyy-MM-dd');
     const defaultOut = format(addDays(today, 1), 'yyyy-MM-dd');
 
@@ -156,6 +201,37 @@ router.get('/vacancy', async (req, res) => {
 
     const checkIn = parseISO(check_in);
     const checkOut = parseISO(check_out);
+
+    // Enforce same date rules on vacancy as well
+    if (checkIn < today) {
+      return res.render('search', {
+        results: null,
+        query: {
+          check_in,
+          check_out,
+          rig_length: rigLengthNum ? String(rigLengthNum) : '',
+          type
+        },
+        error: 'Check-in date cannot be in the past.',
+        rigBounds,
+        todayIso
+      });
+    }
+
+    if (checkOut <= checkIn) {
+      return res.render('search', {
+        results: null,
+        query: {
+          check_in,
+          check_out,
+          rig_length: rigLengthNum ? String(rigLengthNum) : '',
+          type
+        },
+        error: 'Check-out date must be after the check-in date.',
+        rigBounds,
+        todayIso
+      });
+    }
 
     const results = await findAvailableSites({
       checkIn,
@@ -174,14 +250,19 @@ router.get('/vacancy', async (req, res) => {
         type
       },
       error: null,
-      rigBounds
+      rigBounds,
+      todayIso
     });
   } catch (e) {
+    const today = startOfToday();
+    const todayIso = format(today, 'yyyy-MM-dd');
+
     res.render('search', {
       results: null,
       query: req.query,
       error: String(e),
-      rigBounds
+      rigBounds,
+      todayIso
     });
   }
 });
