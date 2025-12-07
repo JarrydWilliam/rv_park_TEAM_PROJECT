@@ -36,12 +36,12 @@
                   <td><%= r.id %></td>
                   <td><%= r.guestName %></td>
                   <td><%= r.siteNumber %></td>
-                  <td><%= r.checkIn %></td>
-                  <td><%= r.checkOut %></td>
+                  <td><%= r.checkIn.toISOString ? r.checkIn.toISOString().slice(0,10) : r.checkIn.toString().slice(0,10) %></td>
+                  <td><%= r.checkOut.toISOString ? r.checkOut.toISOString().slice(0,10) : r.checkOut.toString().slice(0,10) %></td>
                   <td><%= r.type %></td>
                   <td>
-                    <span class="badge <%= r.paymentStatus === 'taken' ? 'bg-success' : 'bg-warning' %>">
-                      <%= r.paymentStatus === 'taken' ? 'Paid' : 'Unfulfilled' %>
+                    <span class="badge <%= r.paid ? 'bg-success' : 'bg-warning' %>">
+                      <%= r.paid ? 'Paid' : 'Unpaid' %>
                     </span>
                   </td>
                   <td>

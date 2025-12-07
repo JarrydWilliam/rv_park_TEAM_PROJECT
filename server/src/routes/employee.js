@@ -1,8 +1,158 @@
-
 const express = require('express');
 const router = express.Router();
 const pool = require('../db/pool');
 const { requireRole } = require('../middleware/auth');
+
+
+router.get('/reservations/select-customer', requireRole('employee'), async (req, res) => {
+  // Get all customers
+  const [customers] = await pool.query("SELECT id, first_name, last_name, email, username FROM users WHERE role = 'customer'");
+  res.render('employee/select_customer', { customers, currentUser: req.session.user || null });
+});
+router.get('/users/new', requireRole('employee'), (req, res) => {
+  res.render('employee/user_form', { user: null, currentUser: req.session.user || null });
+});
+
+router.post('/users/new', requireRole('employee'), async (req, res) => {
+  const {
+    username, email, firstName, lastName, password,
+    dodAffiliation, branch, rank,
+    numAdults, numPets, petBreedNotes
+  } = req.body;
+  const crypto = require('crypto');
+  function hashPassword(password) {
+    return crypto.createHash('sha256').update(password).digest('hex');
+  }
+  const password_hash = hashPassword(password);
+  // Insert user with all fields
+  const [result] = await pool.query(
+    `INSERT INTO users (
+      username, email, first_name, last_name, password_hash, role,
+      dod_affiliation, branch, rank_grade, num_adults, num_pets, pet_breed_notes
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      username, email, firstName, lastName, password_hash, 'customer',
+      dodAffiliation, branch, rank,
+      numAdults, numPets, petBreedNotes
+    ]
+  );
+  const userId = result.insertId;
+  res.redirect(`/employee/reservations/new?userId=${userId}`);
+});
+
+// Employee: Reservation form for created customer (reservation_form.ejs)
+router.get('/reservations/new', requireRole('employee'), async (req, res) => {
+  const userId = req.query.userId;
+  let guest = null;
+  if (userId) {
+    const [guests] = await pool.query("SELECT * FROM users WHERE id = ?", [userId]);
+    guest = guests[0] || null;
+  }
+  // Search criteria
+  const { checkIn, checkOut, rigLengthFt } = req.query;
+  let availableSites = [];
+  let error = null;
+  if (checkIn && checkOut && rigLengthFt) {
+    const today = new Date();
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+    if (checkInDate < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
+      error = 'Check-in date cannot be in the past.';
+    } else if (checkOutDate <= checkInDate) {
+      error = 'Check-out date must be after check-in date.';
+    } else {
+      // Find all sites not reserved for any overlapping dates
+      const [sites] = await pool.query(
+        `SELECT * FROM Site WHERE active = 1 AND lengthFt >= ? AND id NOT IN (
+          SELECT siteId FROM Reservation WHERE NOT (
+            checkOut <= ? OR checkIn >= ?
+          )
+        )`,
+        [rigLengthFt, checkIn, checkOut]
+      );
+      availableSites = sites;
+    }
+  }
+  res.render('employee/reservation_form', {
+    reservation: null,
+    userId,
+    guest,
+    checkIn,
+    checkOut,
+    rigLengthFt,
+    availableSites,
+    error,
+    currentUser: req.session.user || null
+  });
+});
+
+router.post('/reservations/new', requireRole('employee'), async (req, res) => {
+  const { siteId, checkIn, checkOut, rigLengthFt, userId } = req.body;
+  // Validate check-in date is today or later
+  const today = new Date();
+  const checkInDate = new Date(checkIn);
+  if (checkInDate < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
+    return res.status(400).send('Check-in date cannot be in the past.');
+  }
+  // Validate checkout is after check-in
+  const checkOutDate = new Date(checkOut);
+  if (checkOutDate <= checkInDate) {
+    return res.status(400).send('Check-out date must be after check-in date.');
+  }
+  // Get guest info
+  const [guests] = await pool.query("SELECT * FROM users WHERE id = ?", [userId]);
+  const guest = guests[0];
+  if (!guest) return res.status(400).send('Guest not found');
+  // Check if site is available for the selected dates
+  const [conflicts] = await pool.query(
+    `SELECT * FROM Reservation WHERE siteId = ? AND NOT (checkOut <= ? OR checkIn >= ?)`,
+    [siteId, checkIn, checkOut]
+  );
+  if (conflicts.length > 0) {
+    return res.status(400).send('Site is already reserved for those dates.');
+  }
+  // Generate confirmation code
+  function generateConfirmationCode(length = 8) {
+    return Math.random().toString(36).substring(2, 2 + length).toUpperCase();
+  }
+  const confirmationCode = generateConfirmationCode();
+  // Create reservation
+  const [result] = await pool.query(
+    'INSERT INTO Reservation (siteId, guestId, guestName, guestEmail, checkIn, checkOut, rigLengthFt, confirmationCode, status, paid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [siteId, userId, guest.first_name + ' ' + guest.last_name, guest.email, checkIn, checkOut, rigLengthFt, confirmationCode, 'CONFIRMED', 0]
+  );
+  const reservationId = result.insertId;
+  res.redirect(`/employee/reservations/${reservationId}/payment`);
+});
+
+// Employee: Payment form for reservation (payment_form.ejs)
+router.get('/reservations/:id/payment', requireRole('employee'), async (req, res) => {
+  const [rows] = await pool.query('SELECT * FROM Reservation WHERE id = ?', [req.params.id]);
+  const reservation = rows[0];
+  if (!reservation) return res.status(404).send('Reservation not found');
+  // Calculate total amount using policy.js logic
+  const { nightsBetween, activeRateFor } = require('../utils/policy');
+  let totalAmount = 0;
+  if (reservation) {
+    const nights = nightsBetween(reservation.checkIn, reservation.checkOut);
+    // Get site type
+    const [siteRows] = await pool.query('SELECT * FROM Site WHERE id = ?', [reservation.siteId]);
+    const site = siteRows[0];
+    let nightlyRate = 30.0;
+    if (site) {
+      nightlyRate = await activeRateFor(site.type, reservation.checkIn);
+    }
+    totalAmount = nightlyRate * nights;
+  }
+  res.render('employee/payment_form', { reservation, totalAmount, currentUser: req.session.user || null });
+});
+
+router.post('/reservations/:id/payment', requireRole('employee'), async (req, res) => {
+  const { amountPaid, paymentMethod, paymentStatus } = req.body;
+  const paid = paymentStatus === 'taken' ? 1 : 0;
+  await pool.query('UPDATE Reservation SET amountPaid = ?, paymentMethod = ?, paid = ? WHERE id = ?', [amountPaid, paymentMethod, paid, req.params.id]);
+  res.redirect('/employee/reservations');
+});
 
 // GET /employee/walkin_reports
 router.get('/walkin_reports', async (req, res) => {
@@ -46,11 +196,6 @@ router.get('/reservations/:id/payment', requireRole('employee'), async (req, res
 });
 
 // Record manual payment
-router.post('/reservations/:id/payment', requireRole('employee'), async (req, res) => {
-  const { amountPaid, paymentMethod } = req.body;
-  await pool.query('UPDATE Reservation SET amountPaid = ?, paymentMethod = ? WHERE id = ?', [amountPaid, paymentMethod, req.params.id]);
-  res.redirect('/employee/reservations');
-});
 // List all reservations
 router.get('/reservations', requireRole('employee'), async (req, res) => {
   const [reservations] = await pool.query('SELECT r.*, s.number AS siteNumber FROM Reservation r LEFT JOIN Site s ON r.siteId = s.id');

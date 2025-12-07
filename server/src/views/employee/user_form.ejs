@@ -8,7 +8,7 @@
     <main class="container py-4">
       <h1 class="h3 mb-3">Add Guest User</h1>
       <p class="text-muted mb-4">Add a new guest user to the system.</p>
-      <form method="post" action="/employee/users/create">
+      <form method="post" action="/employee/users/new">
         <div class="mb-3">
           <label for="username" class="form-label">Username</label>
           <input type="text" class="form-control" id="username" name="username" required>
@@ -29,6 +29,55 @@
           <label for="password" class="form-label">Password</label>
           <input type="password" class="form-control" id="password" name="password" required>
         </div>
+          <hr class="mt-4 mb-2">
+          <div class="mb-3">
+            <label for="dodAffiliation" class="form-label">DoD Affiliation</label>
+            <select id="dodAffiliation" name="dodAffiliation" class="form-select" required>
+              <option value="">Select affiliation...</option>
+              <option value="Active Duty">Active Duty</option>
+              <option value="Reserve">Reserve</option>
+              <option value="National Guard">National Guard</option>
+              <option value="Retired">Retired</option>
+              <option value="Veteran">Veteran</option>
+              <option value="DoD Civilian">DoD Civilian</option>
+              <option value="Family Member">Family Member</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="branch" class="form-label">Branch</label>
+            <select id="branch" name="branch" class="form-select" required>
+              <option value="">Select branch...</option>
+              <option value="Army">Army</option>
+              <option value="Navy">Navy</option>
+              <option value="Air Force">Air Force</option>
+              <option value="Marine Corps">Marine Corps</option>
+              <option value="Space Force">Space Force</option>
+              <option value="Coast Guard">Coast Guard</option>
+              <option value="DoD / Other">DoD / Other</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="rank" class="form-label">Rank / Grade</label>
+            <input id="rank" name="rank" type="text" class="form-control" placeholder="e.g., E-6, O-3, GS-12" required />
+          </div>
+          <hr class="mt-4 mb-2">
+          <div class="mb-3">
+            <label for="numAdults" class="form-label">Number of Adults</label>
+            <input id="numAdults" name="numAdults" type="number" min="1" class="form-control" value="1" required />
+          </div>
+          <div class="mb-3">
+            <label for="numPets" class="form-label">Number of Pets</label>
+            <input id="numPets" name="numPets" type="number" min="0" class="form-control" value="0" required />
+          </div>
+          <div class="mb-3">
+            <label for="petBreedNotes" class="form-label">Pet Breed / Notes (optional)</label>
+            <input id="petBreedNotes" name="petBreedNotes" type="text" class="form-control" placeholder="e.g., 1 lab, 1 small mixed breed" />
+          </div>
+          <div class="alert alert-info mt-2 mb-3" role="alert">
+            <strong>Pet Policy Disclaimer:</strong><br>
+            Please inform the guest: Certain breeds may be restricted by base policy. Guests are responsible for their pets’ behavior, vaccinations, and leash requirements.
+          </div>
         <button type="submit" class="btn btn-primary">Add Guest User</button>
       </form>
     </main>

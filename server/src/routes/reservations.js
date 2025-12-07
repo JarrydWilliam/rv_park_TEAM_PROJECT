@@ -273,8 +273,8 @@ router.post('/reserve', async (req, res) => {
         INSERT INTO Reservation
           (siteId, guestName, guestEmail, rigLengthFt,
            checkIn, checkOut, pcs, confirmationCode,
-           nightlyRate, amountPaid, status, guestId)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMED', ?)
+           nightlyRate, amountPaid, status, guestId, paid)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMED', ?, ?)
       `,
       [
         site.id,
@@ -287,7 +287,8 @@ router.post('/reserve', async (req, res) => {
         confirmationCode,
         nightlyRate,
         amountPaid,
-        guestId
+        guestId,
+        1 // paid = 1 for guest reservations
       ]
     );
 

@@ -43,6 +43,8 @@ async function ensureSchemaAndSeed(conn) {
       confirmationCode VARCHAR(16) NOT NULL,
       nightlyRate DECIMAL(10,2) NOT NULL DEFAULT 0,
       amountPaid DECIMAL(10,2) NOT NULL DEFAULT 0,
+      paymentMethod VARCHAR(32) DEFAULT NULL,
+      paid TINYINT(1) NOT NULL DEFAULT 0,
       status ENUM('CONFIRMED','CANCELLED') NOT NULL DEFAULT 'CONFIRMED',
       createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       CONSTRAINT fk_reservation_site
@@ -250,6 +252,7 @@ async function bootstrapDb() {
       num_adults      INT NOT NULL DEFAULT 1,
       num_pets        INT NOT NULL DEFAULT 0,
       pet_breed_notes VARCHAR(255),
+      pet_disclaimer_accepted TINYINT(1) NOT NULL DEFAULT 0,
 
       created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
