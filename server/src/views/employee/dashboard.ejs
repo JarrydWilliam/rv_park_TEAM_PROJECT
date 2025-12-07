@@ -1,39 +1,80 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <%- include('../partials/head', { title: 'Employee Dashboard' }) %>
-  </head>
-  <body>
-    <%- include('../partials/nav') %>
+<head>
+  <%- include('../partials/head', { title: 'Employee Dashboard' }) %>
+</head>
+<body>
+  <%- include('../partials/nav') %>
 
-    <main class="container py-4">
-      <h1 class="h3 mb-3">Employee Dashboard</h1>
-      <p class="text-muted mb-4">Tools for day-to-day RV park operations.</p>
+  <main class="container py-4">
 
-      <div class="row g-3">
-        <div class="col-md-4">
-          <a href="/employee/reservations" class="card card-elevated text-decoration-none">
-            <div class="card-body">
-              <h2 class="h5 mb-1">Manage Reservations</h2>
-              <p class="text-muted mb-0">Search, check in/out, and update bookings.</p>
-            </div>
-          </a>
-        </div>
+    <h1 class="h3 mb-4">Employee Dashboard</h1>
 
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
 
-
-        <div class="col-md-4">
-          <a href="/employee/reservations/select-customer" class="card card-elevated text-decoration-none">
-            <div class="card-body">
-              <h2 class="h5 mb-1">Reserve Site for Customer</h2>
-              <p class="text-muted mb-0">Create customer account, make reservation, and process payment.</p>
-            </div>
-          </a>
+      <!-- Total Customers -->
+      <div class="col-md-4">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">Total Customers</h5>
+            <p class="display-6 fw-bold"><%= stats.totalCustomers %></p>
+          </div>
         </div>
       </div>
 
-      
+      <!-- Total Reservations -->
+      <div class="col-md-4">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">Total Reservations</h5>
+            <p class="display-6 fw-bold"><%= stats.totalReservations %></p>
+          </div>
+        </div>
+      </div>
 
-    <%- include('../partials/footer') %>
-  </body>
+      <!-- Unpaid Reservations -->
+      <div class="col-md-4">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">Unpaid Reservations</h5>
+            <p class="display-6 fw-bold text-danger"><%= stats.unpaidReservations %></p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Quick Actions -->
+    <h3 class="h5 mt-4 mb-3">Quick Actions</h3>
+
+    <div class="row g-3">
+
+      <!-- Create Customer -->
+      <div class="col-md-4">
+        <a href="/employee/users/new" class="btn btn-primary w-100 py-3">
+          Create Customer Account
+        </a>
+      </div>
+
+      <!-- New Reservation -->
+      <div class="col-md-4">
+        <a href="/employee/reservations/new" class="btn btn-success w-100 py-3">
+          Make a Reservation
+        </a>
+      </div>
+
+      <!-- View Reservations -->
+      <div class="col-md-4">
+        <a href="/employee/reservations" class="btn btn-secondary w-100 py-3">
+          View All Reservations
+        </a>
+      </div>
+
+    </div>
+
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
 </html>

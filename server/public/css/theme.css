@@ -162,3 +162,21 @@ html, body {
 .text-muted { color: var(--text-3) !important; }
 .border { border-color: var(--border-1) !important; }
 .rounded-xl { border-radius: var(--radius) !important; }
+
+/* Dark-mode friendly disclaimer cards on Register page */
+.disclaimer-card {
+  border-radius: 0.75rem;
+  padding: 0; /* card-body already has padding */
+}
+
+/* If you’re using a dark theme, these colors keep it readable */
+.disclaimer-card {
+  background-color: #111827;      /* dark slate */
+  border: 1px solid #374151;      /* subtle border */
+  color: #e5e7eb;                 /* light text */
+}
+
+.disclaimer-card .form-check-label {
+  cursor: pointer;
+}
+
