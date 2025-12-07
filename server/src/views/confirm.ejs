@@ -15,6 +15,21 @@
         </p>
       </div>
     </header>
+<% if (typeof adjustment !== 'undefined' && adjustment && adjustment.amount > 0) { %>
+  <div class="alert alert-info mt-3">
+    <% if (adjustment.type === 'refund') { %>
+      Your updated stay now costs
+      <strong>$<%= Number(r.amountPaid).toFixed(2) %></strong>.
+      You will be refunded
+      <strong>$<%= adjustment.amount.toFixed(2) %></strong>.
+    <% } else if (adjustment.type === 'additional') { %>
+      Your updated stay now costs
+      <strong>$<%= Number(r.amountPaid).toFixed(2) %></strong>.
+      You owe an additional
+      <strong>$<%= adjustment.amount.toFixed(2) %></strong>.
+    <% } %>
+  </div>
+<% } %>
 
     <main class="container py-4">
       <section class="card card-elevated">

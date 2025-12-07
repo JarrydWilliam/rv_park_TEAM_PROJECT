@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('partials/head', { title: 'Edit Reservation' }) %>
+  </head>
+  <body>
+    <%- include('partials/nav') %>
+
+    <main class="container py-4">
+      <h1 class="h3 mb-3">Edit Reservation</h1>
+      <p class="text-muted mb-4">
+        Update guest details or stay dates for this reservation.
+      </p>
+
+      <form method="post" action="/reservations/<%= r.id %>/edit" class="card card-elevated p-3 p-md-4">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="guestName" class="form-label">Guest Name</label>
+            <input
+              id="guestName"
+              name="guestName"
+              type="text"
+              class="form-control"
+              value="<%= r.guestName %>"
+              required
+            />
+          </div>
+
+          <div class="col-md-6">
+            <label for="guestEmail" class="form-label">Guest Email</label>
+            <input
+              id="guestEmail"
+              name="guestEmail"
+              type="email"
+              class="form-control"
+              value="<%= r.guestEmail %>"
+              required
+            />
+          </div>
+
+          <div class="col-md-4">
+            <label for="rigLengthFt" class="form-label">Rig Length (ft)</label>
+            <input
+              id="rigLengthFt"
+              name="rigLengthFt"
+              type="number"
+              min="1"
+              class="form-control"
+              value="<%= r.rigLengthFt %>"
+              required
+            />
+          </div>
+
+          <div class="col-md-4">
+            <label for="checkIn" class="form-label">Check-in</label>
+            <input
+              id="checkIn"
+              name="checkIn"
+              type="date"
+              class="form-control"
+              value="<%= r.checkIn.toISOString().slice(0, 10) %>"
+              required
+            />
+          </div>
+
+          <div class="col-md-4">
+            <label for="checkOut" class="form-label">Check-out</label>
+            <input
+              id="checkOut"
+              name="checkOut"
+              type="date"
+              class="form-control"
+              value="<%= r.checkOut.toISOString().slice(0, 10) %>"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+  <a href="/confirm/<%= r.confirmationCode %>" class="btn btn-outline-secondary">
+    Cancel
+  </a>
+  <button type="submit" class="btn btn-primary">
+    Save Changes
+  </button>
+</div>
+
+
+    <%- include('partials/footer') %>
+  </body>
+</html>
