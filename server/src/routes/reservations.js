@@ -9,8 +9,8 @@ const {
   activeRateFor,
   stayTouchesSpecialEvent,
 } = require('../utils/policy');
-const { requireAuth } = require('../middleware/auth');
-const { requireRole } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
+
 const router = express.Router();
 
 /**
@@ -32,40 +32,47 @@ router.get('/reservations/:id/edit', requireAuth, async (req, res) => {
 
   res.render('edit_reservation', { r });
 });
+
 /**
  * GET /employee/reservations/find
  * Employee tool: enter confirmation code, redirect to the edit page.
  */
-router.get('/employee/reservations/find', requireRole('employee'), async (req, res) => {
-  const { code } = req.query;
+router.get(
+  '/employee/reservations/find',
+  requireRole('employee'),
+  async (req, res) => {
+    const { code } = req.query;
 
-  if (!code) {
-    return res.status(400).send('Confirmation code is required.');
+    if (!code) {
+      return res.status(400).send('Confirmation code is required.');
+    }
+
+    const [rows] = await pool.query(
+      'SELECT id FROM Reservation WHERE confirmationCode = ? LIMIT 1',
+      [code]
+    );
+    const r = rows[0];
+
+    if (!r) {
+      return res
+        .status(404)
+        .send('No reservation found for that confirmation code.');
+    }
+
+    // Redirect employee to the existing edit page for that reservation ID
+    res.redirect(`/reservations/${r.id}/edit`);
   }
-
-  const [rows] = await pool.query(
-    'SELECT id FROM Reservation WHERE confirmationCode = ? LIMIT 1',
-    [code]
-  );
-  const r = rows[0];
-
-  if (!r) {
-    return res.status(404).send('No reservation found for that confirmation code.');
-  }
-
-  // Redirect employee to the existing edit page for that reservation ID
-  res.redirect(`/reservations/${r.id}/edit`);
-});
+);
 
 /**
  * POST /reservations/:id/edit
- * Update reservation details and recalculate amount.
+ * Update reservation details, re-check availability, and recalculate amount.
  */
-router.post('/reservations/:id/edit', async (req, res) => {
+router.post('/reservations/:id/edit', requireAuth, async (req, res) => {
   const id = Number(req.params.id);
   const { checkIn, checkOut, guestName, guestEmail, rigLengthFt } = req.body;
 
-  // 0) Load existing reservation (for old amount + dates + nightlyRate)
+  // 0) Load existing reservation (for site + old amount + nightlyRate)
   const [existingRows] = await pool.query(
     'SELECT * FROM Reservation WHERE id = ? LIMIT 1',
     [id]
@@ -76,6 +83,8 @@ router.post('/reservations/:id/edit', async (req, res) => {
     return res.status(404).send('Reservation not found.');
   }
 
+  const siteId = existing.siteId;
+
   // Parse old dates & compute old amount
   const oldCheckIn = toDate(existing.checkIn);
   const oldCheckOut = toDate(existing.checkOut);
@@ -85,13 +94,14 @@ router.post('/reservations/:id/edit', async (req, res) => {
 
   // If nightlyRate is somehow 0 in DB, fall back to a lookup so math still works
   if (!nightlyRate || isNaN(nightlyRate)) {
-    nightlyRate = await activeRateFor(existing.type || existing.siteType || 'STANDARD', oldCheckIn);
+    nightlyRate = await activeRateFor(
+      existing.type || existing.siteType || 'STANDARD',
+      oldCheckIn
+    );
   }
 
   const oldAmount =
-    nightlyRate > 0
-      ? nightlyRate * oldNights
-      : Number(existing.amountPaid || 0);
+    nightlyRate > 0 ? nightlyRate * oldNights : Number(existing.amountPaid || 0);
 
   // 1) Validate new dates
   const checkInDate = toDate(checkIn);
@@ -99,19 +109,46 @@ router.post('/reservations/:id/edit', async (req, res) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  if (!(checkInDate instanceof Date) || isNaN(checkInDate.getTime())) {
+    return res.status(400).send('Invalid check-in date.');
+  }
+  if (!(checkOutDate instanceof Date) || isNaN(checkOutDate.getTime())) {
+    return res.status(400).send('Invalid check-out date.');
+  }
   if (checkInDate < today) {
     return res.status(400).send('Check-in date cannot be before today.');
   }
   if (checkOutDate <= checkInDate) {
-    return res.status(400).send('Check-out date must be after check-in date.');
+    return res
+      .status(400)
+      .send('Check-out date must be after check-in date.');
   }
 
   const newNights = nightsBetween(checkInDate, checkOutDate);
 
-  // 2) Recalculate new amount using nightlyRate
+  // 2) Re-check availability for this site for the new dates
+  const [conflicts] = await pool.query(
+    `SELECT id
+     FROM Reservation
+     WHERE siteId = ?
+       AND id <> ?
+       AND status = 'CONFIRMED'
+       AND NOT (checkOut <= ? OR checkIn >= ?)`,
+    [siteId, id, checkInDate, checkOutDate]
+  );
+
+  if (conflicts.length > 0) {
+    return res
+      .status(409)
+      .send(
+        'Site is no longer available for those dates. Please choose different dates.'
+      );
+  }
+
+  // 3) Recalculate new amount using the same nightlyRate
   const newAmount = nightlyRate * newNights;
 
-  // 3) Update reservation with new dates + new amountPaid
+  // 4) Update reservation with new dates + new amountPaid + nightlyRate
   await pool.query(
     `
       UPDATE Reservation
@@ -121,42 +158,83 @@ router.post('/reservations/:id/edit', async (req, res) => {
           guestEmail = ?,
           rigLengthFt = ?,
           amountPaid = ?,
-          nightlyRate = ?
+          nightlyRate = ?,
+          nights = ?
       WHERE id = ?
     `,
-    [checkInDate, checkOutDate, guestName, guestEmail, rigLengthFt, newAmount, nightlyRate, id]
+    [
+      checkInDate,
+      checkOutDate,
+      guestName,
+      guestEmail,
+      rigLengthFt,
+      newAmount,
+      nightlyRate,
+      newNights,
+      id,
+    ]
   );
 
-  // 4) Compute difference for messaging (refund or extra charge)
+  // 5) Optional: record adjustment in Payment table (refund or additional charge)
   let adjustment = null;
   if (!isNaN(oldAmount) && !isNaN(newAmount) && nightlyRate > 0) {
-    if (newAmount < oldAmount) {
+    const diff = Number((newAmount - oldAmount).toFixed(2));
+    if (diff < 0) {
       adjustment = {
         type: 'refund',
-        amount: Number((oldAmount - newAmount).toFixed(2)),
+        amount: Math.abs(diff),
       };
-    } else if (newAmount > oldAmount) {
+    } else if (diff > 0) {
       adjustment = {
         type: 'additional',
-        amount: Number((newAmount - oldAmount).toFixed(2)),
+        amount: diff,
       };
+    }
+
+    if (adjustment) {
+      const userId =
+        req.session.user && req.session.user.id ? req.session.user.id : null;
+      const txnId =
+        'ADJ-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+
+      await pool.query(
+        `
+          INSERT INTO Payment
+            (reservationId, userId, amount, paymentMethod, status, transactionId, notes, createdAt)
+          VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+        `,
+        [
+          id,
+          userId,
+          adjustment.type === 'refund'
+            ? -adjustment.amount
+            : adjustment.amount,
+          'Adjustment',
+          adjustment.type === 'refund' ? 'Refund' : 'Additional Charge',
+          txnId,
+          'Reservation date change adjustment',
+        ]
+      );
     }
   }
 
-  // 5) Reload updated reservation + site
+  // 6) Reload updated reservation for confirmation view
   const [updatedRows] = await pool.query(
-    'SELECT * FROM Reservation WHERE id = ? LIMIT 1',
+    `
+      SELECT r.*, s.number AS siteNumber, s.lengthFt, s.type AS siteType
+      FROM Reservation r
+      JOIN Site s ON s.id = r.siteId
+      WHERE r.id = ?
+      LIMIT 1
+    `,
     [id]
   );
   const r = updatedRows[0];
 
-  const [siteRows] = await pool.query(
-    'SELECT * FROM Site WHERE id = ? LIMIT 1',
-    [r.siteId]
-  );
-  r.site = siteRows[0] || null;
+  if (!r) {
+    return res.status(404).send('Reservation not found after update.');
+  }
 
-  // 6) Render confirm view directly, with adjustment info
   res.render('confirm', { r, adjustment });
 });
 
@@ -179,7 +257,9 @@ router.get('/reserve/new', requireAuth, async (req, res) => {
     const { siteId, check_in, check_out, rig_length, type } = req.query;
 
     if (!siteId || !check_in || !check_out || !rig_length) {
-      return res.status(400).send('Missing required reservation parameters.');
+      return res
+        .status(400)
+        .send('Missing required reservation parameters.');
     }
 
     const siteIdNum = Number(siteId);
@@ -220,17 +300,15 @@ router.get('/reserve/new', requireAuth, async (req, res) => {
       return res.status(400).send('Rig is too long for this site.');
     }
 
-    // Peak 14-night rule
-    const peaksOk = !(
-      withinPeak(checkInDate) ||
-      withinPeak(checkOutDate)
-    ) || nights <= 14;
+    // Check peak rules
+    const peaksOk = withinPeak(checkInDate, checkOutDate);
     if (!peaksOk) {
       return res
         .status(400)
         .send('Stays cannot exceed 14 nights within peak windows.');
     }
 
+    // Render reservation form
     res.render('reserve', {
       site,
       query: {
@@ -247,10 +325,6 @@ router.get('/reserve/new', requireAuth, async (req, res) => {
 
 /**
  * POST /reserve
- *
- * Hotel-style behavior:
- *  - Validate and create a reservation for the selected site.
- *  - If the site is no longer available, suggest alternative sites.
  */
 router.post('/reserve', requireAuth, async (req, res) => {
   try {
@@ -266,18 +340,17 @@ router.post('/reserve', requireAuth, async (req, res) => {
     const siteIdNum = Number(siteId);
     const rigLengthNum = Number(rigLengthFt);
 
-    // Accept a few possible field names for dates
-    const checkInRaw =
-      req.body.checkIn || req.body.check_in || req.body.checkin;
-    const checkOutRaw =
-      req.body.checkOut || req.body.check_out || req.body.checkout;
-
-    if (!siteIdNum || !checkInRaw || !checkOutRaw) {
-      throw new Error('Missing site, check-in, or check-out.');
+    if (!siteId || !guestName || !guestEmail || !rigLengthFt || !pcs) {
+      throw new Error('Missing required fields.');
     }
 
-    const checkInDate = toDate(checkInRaw);
-    const checkOutDate = toDate(checkOutRaw);
+    if (Number.isNaN(siteIdNum) || Number.isNaN(rigLengthNum)) {
+      throw new Error('Invalid site or rig length.');
+    }
+
+    const { checkIn, checkOut } = pcs;
+    const checkInDate = toDate(checkIn);
+    const checkOutDate = toDate(checkOut);
 
     if (
       !(checkInDate instanceof Date) ||
@@ -288,13 +361,9 @@ router.post('/reserve', requireAuth, async (req, res) => {
       throw new Error('Invalid check-in or check-out date.');
     }
 
-    if (checkOutDate <= checkInDate) {
-      throw new Error('Check-out must be after check-in.');
-    }
-
     // 1) Fetch site
     const [siteRows] = await pool.query(
-      'SELECT * FROM Site WHERE id = ? AND active = 1 LIMIT 1',
+      'SELECT * FROM Site WHERE id = ? AND active = 1',
       [siteIdNum]
     );
     const site = siteRows[0];
@@ -303,175 +372,101 @@ router.post('/reserve', requireAuth, async (req, res) => {
       throw new Error('Site not found or inactive.');
     }
 
-    const requestedType = type || site.type || '';
-
-    // 2) Check rig length vs site length
+    // 2) Check rig vs site length
     if (rigLengthNum > site.lengthFt) {
       throw new Error('Rig is too long for this site.');
     }
 
-    // 3) Check for overlapping confirmed reservation on THIS site
+    // 3) Check peak rules
+    const peaksOk = withinPeak(checkInDate, checkOutDate);
+    if (!peaksOk) {
+      throw new Error('Stays cannot exceed 14 nights within peak windows.');
+    }
+
+    // 4) Ensure no overlapping CONFIRMED reservation for that site
     const [overlapRows] = await pool.query(
       `
-        SELECT id
-        FROM Reservation
-        WHERE siteId = ?
-          AND status = 'CONFIRMED'
-          AND checkIn < ?
-          AND checkOut > ?
-        LIMIT 1
+       SELECT id
+       FROM Reservation
+       WHERE siteId = ?
+         AND status = 'CONFIRMED'
+         AND NOT (checkOut <= ? OR checkIn >= ?)
       `,
-      [site.id, checkOutDate, checkInDate]
+      [siteIdNum, checkIn, checkOut]
     );
 
     if (overlapRows.length > 0) {
-      // HOTEL-STYLE BEHAVIOR:
-      // This site is not available for those dates anymore.
-      // Find alternative sites that are available for the same dates.
-
-      const params = [];
-      const whereClauses = ['s.active = 1'];
-
-      // Exclude the original site we just tried to book
-      whereClauses.push('s.id <> ?');
-      params.push(site.id);
-
-      // Rig length filter
-      if (rigLengthNum && rigLengthNum > 0) {
-        whereClauses.push('s.lengthFt >= ?');
-        params.push(rigLengthNum);
-      }
-
-      // Type filter (try to keep same type the user originally picked)
-      if (requestedType) {
-        whereClauses.push('s.type = ?');
-        params.push(requestedType);
-      }
-
-      // NOT EXISTS overlapping reservations on alternative sites
-      whereClauses.push(`
-        NOT EXISTS (
-          SELECT 1
-          FROM Reservation r
-          WHERE
-            r.siteId = s.id
-            AND r.status = 'CONFIRMED'
-            AND r.checkIn < ?
-            AND r.checkOut > ?
-        )
-      `);
-      params.push(checkOutDate, checkInDate);
-
-      const whereSql = `WHERE ${whereClauses.join(' AND ')}`;
-
-      const [alternativeRows] = await pool.query(
+      // conflict – show alternatives for the same dates
+      const [altSites] = await pool.query(
         `
-          SELECT
-            s.id,
-            s.number,
-            s.type,
-            s.lengthFt,
-            s.description,
-            s.active
-          FROM Site s
-          ${whereSql}
-          ORDER BY s.lengthFt ASC
+         SELECT s.*
+         FROM Site s
+         WHERE s.active = 1
+           AND s.lengthFt >= ?
+           AND NOT EXISTS (
+             SELECT 1 FROM Reservation r
+             WHERE r.siteId = s.id
+               AND r.status = 'CONFIRMED'
+               AND NOT (r.checkOut <= ? OR r.checkIn >= ?)
+           )
         `,
-        params
+        [rigLengthNum, checkIn, checkOut]
       );
 
       return res.status(409).render('reserve_conflict', {
         site,
-        checkIn: checkInRaw,
-        checkOut: checkOutRaw,
+        checkIn,
+        checkOut,
         rigLengthFt: rigLengthNum,
-        type: requestedType,
-        alternatives: alternativeRows,
+        type: type || site.type,
+        alternatives: altSites,
       });
     }
 
-    // 4) Business rules: nights, peak season, PCS flag
-    const nightCount = nightsBetween(checkInDate, checkOutDate);
-    if (nightCount <= 0) {
-      throw new Error('Stay must be at least one night.');
-    }
+    // 5) Get active rate
+    const { nightlyRate } = await activeRateFor(
+      siteIdNum,
+      checkInDate,
+      checkOutDate
+    );
+    const nights = nightsBetween(checkInDate, checkOutDate);
+    const totalAmount = nightlyRate * nights;
 
-    const inPeak =
-      withinPeak(checkInDate) || withinPeak(checkOutDate);
-    const pcsFlag =
-      pcs === 'on' ||
-      pcs === 'true' ||
-      pcs === true ||
-      pcs === 1 ||
-      pcs === '1';
-
-    if (inPeak && !pcsFlag && nightCount > 14) {
-      throw new Error('Peak season limit is 14 nights (PCS exempt).');
-    }
-
-    // 5) Rate lookup & total amount
-    const nightlyRate = await activeRateFor(site.type, checkInDate);
-    const amountPaid = nightlyRate * nightCount;
-
-    // 6) Confirmation code
-    const confirmationCode = Math.random()
-      .toString(36)
-      .slice(2, 10)
-      .toUpperCase();
-
-    // 7) Insert reservation with guestId if available
-    const guestId =
-      req.session.user && req.session.user.id
-        ? req.session.user.id
-        : null;
-    await pool.query(
+    // 6) Insert reservation
+    const confirmationCode =
+      'R' + Date.now().toString(36).toUpperCase();
+    const [result] = await pool.query(
       `
-        INSERT INTO Reservation
-          (siteId, guestName, guestEmail, rigLengthFt,
-           checkIn, checkOut, pcs, confirmationCode,
-           nightlyRate, amountPaid, status, guestId, paid)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMED', ?, ?)
+       INSERT INTO Reservation
+         (siteId, guestName, guestEmail, checkIn, checkOut, nights,
+          rigLengthFt, type, nightlyRate, amountPaid, status, confirmationCode)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMED', ?)
       `,
       [
-        site.id,
+        siteIdNum,
         guestName,
         guestEmail,
+        checkIn,
+        checkOut,
+        nights,
         rigLengthNum,
-        checkInDate,
-        checkOutDate,
-        pcsFlag ? 1 : 0,
-        confirmationCode,
+        type || site.type,
         nightlyRate,
-        amountPaid,
-        guestId,
-        1, // paid = 1 for guest reservations
+        totalAmount,
+        confirmationCode,
       ]
     );
 
-    // 8) Get the newly created reservation's ID (for payment route)
-    const [result] = await pool.query(
-      'SELECT id FROM Reservation WHERE confirmationCode = ? LIMIT 1',
-      [confirmationCode]
-    );
-    const reservationId = result[0]?.id;
-    if (!reservationId) {
-      return res
-        .status(500)
-        .send(
-          'Reservation created, but could not find reservation ID for payment.'
-        );
-    }
-
-    // Redirect to payment page
+    const reservationId = result.insertId;
     res.redirect(`/payments/${reservationId}`);
   } catch (e) {
+    console.error('Error creating reservation:', e);
     res.status(400).send(String(e));
   }
 });
 
 /**
  * GET /confirm/:code
- * Load reservation by confirmation code and render confirm page.
  */
 router.get('/confirm/:code', async (req, res) => {
   const { code } = req.params;
@@ -482,7 +477,6 @@ router.get('/confirm/:code', async (req, res) => {
       FROM Reservation r
       JOIN Site s ON s.id = r.siteId
       WHERE r.confirmationCode = ?
-      LIMIT 1
     `,
     [code]
   );
@@ -500,7 +494,6 @@ router.get('/confirm/:code', async (req, res) => {
 
 /**
  * POST /reservations/:id/cancel
- * Cancels a reservation and computes any cancellation fee.
  */
 router.post('/reservations/:id/cancel', requireAuth, async (req, res) => {
   const id = Number(req.params.id);
@@ -523,30 +516,58 @@ router.post('/reservations/:id/cancel', requireAuth, async (req, res) => {
   }
 
   const checkInDate = toDate(r.checkIn);
+  const now = new Date();
   const hoursBefore =
-    (checkInDate.getTime() - Date.now()) / (1000 * 60 * 60);
+    (checkInDate.getTime() - now.getTime()) / (1000 * 60 * 60);
 
-  const isSpecial = await stayTouchesSpecialEvent(
-    r.checkIn,
-    r.checkOut
-  );
+  // 2) Determine if this stay touches a special event
+  const isSpecial = await stayTouchesSpecialEvent(r.checkIn, r.checkOut);
 
+  // 3) Fee logic: always $10 admin fee, plus one night if within 48 hours OR special event
   const oneNight = Number(r.nightlyRate || 30.0);
-  let fee = 0;
 
-  if (isSpecial) {
-    fee = oneNight;
-  } else if (hoursBefore <= 72) {
-    fee = oneNight;
-  } else {
-    fee = 10.0;
+  let fee = 10.0; // base admin fee
+  if (hoursBefore <= 48 || isSpecial) {
+    fee += oneNight;
+  }
+
+  const totalPaid = Number(r.amountPaid || 0);
+  let refundAmount = 0;
+
+  if (totalPaid > 0) {
+    refundAmount = Math.max(0, totalPaid - fee);
+  }
+
+  // 4) Record refund/fee in Payment table (negative amount for refund)
+  if (refundAmount > 0) {
+    const userId =
+      req.session.user && req.session.user.id ? req.session.user.id : null;
+    const txnId =
+      'REF-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+
+    await pool.query(
+      `
+        INSERT INTO Payment
+          (reservationId, userId, amount, paymentMethod, status, transactionId, notes, createdAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+      `,
+      [
+        r.id,
+        userId,
+        -refundAmount,
+        'Refund',
+        'Completed',
+        txnId,
+        `Cancellation refund (fee ${fee.toFixed(2)})`,
+      ]
+    );
   }
 
   // 5) Mark reservation as cancelled
-  await pool.query(
-    'UPDATE Reservation SET status = ? WHERE id = ?',
-    ['CANCELLED', id]
-  );
+  await pool.query('UPDATE Reservation SET status = ? WHERE id = ?', [
+    'CANCELLED',
+    id,
+  ]);
 
   res.render('cancelled', { r, fee, oneNight });
 });

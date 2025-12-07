@@ -1,73 +1,61 @@
+// server/src/routes/auth.js
 const express = require('express');
 const crypto = require('crypto');
 const router = express.Router();
 
-const pool = require('../db/pool'); 
+const pool = require('../db/pool');
 
 function hashPassword(password) {
   return crypto.createHash('sha256').update(password).digest('hex');
 }
 
-function comparePassword(password, hash) {
-  return hashPassword(password) === hash;
-}
-
 // --- LOGIN ---
 
 router.get('/login', (req, res) => {
-  const next = req.query.next || '';
-  res.render('login', { error: null, next });
+  res.render('login', { error: null });
 });
 
 router.post('/login', async (req, res) => {
-  const { username, password, next } = req.body;
+  const { username, password } = req.body;
 
-  try {
-    const [rows] = await pool.query(
-      'SELECT id, username, email, password_hash, role, first_name, last_name FROM users WHERE username = ?',
-      [username]
-    );
+  const [rows] = await pool.query(
+    'SELECT * FROM users WHERE username = ? LIMIT 1',
+    [username]
+  );
+  const user = rows[0];
 
-    if (rows.length === 0) {
-      return res.status(401).render('login', { error: 'Invalid username or password.', next });
-    }
-
-    const user = rows[0];
-
-    const ok = comparePassword(password, user.password_hash);
-    if (!ok) {
-      return res.status(401).render('login', { error: 'Invalid username or password.', next });
-    }
-
-    // Store minimal info in session
-    req.session.user = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      firstName: user.first_name,
-      lastName: user.last_name,
-    };
-
-    // If there is a next URL (e.g., from requireAuth), honor it
-    if (next && typeof next === 'string' && next.trim() !== '') {
-      return res.redirect(next);
-    }
-
-    // Otherwise, role-based landing
-    if (user.role === 'admin') return res.redirect('/admin/dashboard');
-    if (user.role === 'employee') return res.redirect('/employee/dashboard');
-    return res.redirect('/guest/dashboard'); // customer
-  } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).render('login', {
-      error: 'An error occurred while signing in.',
-      next,
-    });
+  if (!user) {
+    return res
+      .status(401)
+      .render('login', { error: 'Invalid username or password.' });
   }
+
+  const passwordHash = hashPassword(password);
+  if (user.password_hash !== passwordHash) {
+    return res
+      .status(401)
+      .render('login', { error: 'Invalid username or password.' });
+  }
+
+  req.session.user = {
+    id: user.id,
+    username: user.username,
+    role: user.role,
+    firstName: user.first_name,
+    lastName: user.last_name,
+  };
+
+  if (user.role === 'admin') {
+    return res.redirect('/admin/dashboard');
+  }
+  if (user.role === 'employee') {
+    return res.redirect('/employee/dashboard');
+  }
+
+  return res.redirect('/guest/dashboard');
 });
 
-// --- REGISTER (CUSTOMER) ---
+// --- REGISTER ---
 
 router.get('/register', (req, res) => {
   res.render('register', { error: null });
@@ -88,7 +76,8 @@ router.post('/register', async (req, res) => {
       numAdults,
       numPets,
       petBreedNotes,
-      petDisclaimerAccepted
+      petDisclaimerAccepted,
+      baseAccessConfirmed,
     } = req.body;
 
     // basic validation
@@ -97,7 +86,15 @@ router.post('/register', async (req, res) => {
     }
 
     if (!petDisclaimerAccepted) {
-      return res.status(400).render('register', { error: 'You must accept the pet policy disclaimer.' });
+      return res
+        .status(400)
+        .render('register', { error: 'You must accept the pet policy disclaimer.' });
+    }
+
+    if (!baseAccessConfirmed) {
+      return res
+        .status(400)
+        .render('register', { error: 'You must confirm that you can access the base.' });
     }
 
     // check username uniqueness
@@ -111,25 +108,42 @@ router.post('/register', async (req, res) => {
 
     const passwordHash = hashPassword(password);
 
+    const petDisclaimerFlag =
+      petDisclaimerAccepted === 'on' ||
+      petDisclaimerAccepted === 'true' ||
+      petDisclaimerAccepted === true ||
+      petDisclaimerAccepted === 1 ||
+      petDisclaimerAccepted === '1';
+
+    const baseAccessFlag =
+      baseAccessConfirmed === 'on' ||
+      baseAccessConfirmed === 'true' ||
+      baseAccessConfirmed === true ||
+      baseAccessConfirmed === 1 ||
+      baseAccessConfirmed === '1';
+
     const [result] = await pool.query(
-  `INSERT INTO users
-    (username, email, first_name, last_name, password_hash, role,
-     dod_affiliation, branch, rank_grade, num_adults, num_pets, pet_breed_notes)
-   VALUES (?, ?, ?, ?, ?, 'customer', ?, ?, ?, ?, ?, ?)`,
-  [
-    username,
-    email,
-    firstName,
-    lastName,
-    passwordHash,
-    dodAffiliation,
-    branch,
-    rank,                     
-    numAdults,
-    numPets,
-    petBreedNotes,
-  ]
-);
+      `INSERT INTO users
+        (username, email, first_name, last_name, password_hash, role,
+         dod_affiliation, branch, rank_grade, num_adults, num_pets, pet_breed_notes,
+         pet_disclaimer_accepted, base_access_confirmed)
+       VALUES (?, ?, ?, ?, ?, 'customer', ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        username,
+        email,
+        firstName,
+        lastName,
+        passwordHash,
+        dodAffiliation,
+        branch,
+        rank,
+        Number(numAdults) || 1,
+        Number(numPets) || 0,
+        petBreedNotes || null,
+        petDisclaimerFlag ? 1 : 0,
+        baseAccessFlag ? 1 : 0,
+      ]
+    );
 
     const newUserId = result.insertId;
 
@@ -144,7 +158,9 @@ router.post('/register', async (req, res) => {
     res.redirect('/guest/dashboard');
   } catch (err) {
     console.error('Registration error:', err);
-    res.status(500).render('register', { error: 'Error creating account. Please try again.' });
+    res
+      .status(500)
+      .render('register', { error: 'Error creating account. Please try again.' });
   }
 });
 

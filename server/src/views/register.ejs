@@ -6,226 +6,212 @@
   <body>
     <%- include('partials/nav') %>
 
-    <main class="d-flex align-items-center justify-content-center" style="min-height: calc(100vh - 64px);">
-      <section class="card card-elevated p-4 p-md-5" style="max-width: 720px; width: 100%;">
-        <div class="mb-4 text-center">
-          <i class="bi bi-person-plus display-5 mb-2"></i>
-          <h1 class="h4 fw-semibold mb-1">Create a Guest Account</h1>
-          <p class="text-muted mb-0">
-            Register once to manage your RV reservations and store DoD information securely.
-          </p>
+    <main class="container py-4">
+      <h1 class="h3 mb-3">Create Account</h1>
+      <p class="text-muted mb-4">
+        Create your account so you can reserve a site at the Hill AFB RV park.
+      </p>
+
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger"><%= error %></div>
+      <% } %>
+
+      <form action="/register" method="post" class="row g-3">
+        <!-- Name -->
+        <div class="col-md-6">
+          <label for="firstName" class="form-label">First name</label>
+          <input
+            type="text"
+            class="form-control"
+            id="firstName"
+            name="firstName"
+            required
+          />
+        </div>
+        <div class="col-md-6">
+          <label for="lastName" class="form-label">Last name</label>
+          <input
+            type="text"
+            class="form-control"
+            id="lastName"
+            name="lastName"
+            required
+          />
         </div>
 
-        <% if (typeof error !== 'undefined' && error) { %>
-          <div class="alert alert-danger mb-3">
-            <i class="bi bi-exclamation-triangle me-2"></i><%= error %>
-          </div>
-        <% } %>
+        <!-- Contact -->
+        <div class="col-md-6">
+          <label for="email" class="form-label">Email</label>
+          <input
+            type="email"
+            class="form-control"
+            id="email"
+            name="email"
+            required
+          />
+        </div>
 
-        <form method="post" action="/register">
-          <div class="row g-3">
-            <!-- Basic info -->
-            <div class="col-md-6">
-              <label for="firstName" class="form-label">First Name</label>
-              <input
-                id="firstName"
-                name="firstName"
-                type="text"
-                class="form-control"
-                required
-              />
-            </div>
+        <!-- Account credentials -->
+        <div class="col-md-3">
+          <label for="username" class="form-label">Username</label>
+          <input
+            type="text"
+            class="form-control"
+            id="username"
+            name="username"
+            required
+          />
+        </div>
+        <div class="col-md-3">
+          <label for="password" class="form-label">Password</label>
+          <input
+            type="password"
+            class="form-control"
+            id="password"
+            name="password"
+            required
+          />
+        </div>
+        <div class="col-md-3">
+          <label for="confirmPassword" class="form-label">Confirm password</label>
+          <input
+            type="password"
+            class="form-control"
+            id="confirmPassword"
+            name="confirmPassword"
+            required
+          />
+        </div>
 
-            <div class="col-md-6">
-              <label for="lastName" class="form-label">Last Name</label>
-              <input
-                id="lastName"
-                name="lastName"
-                type="text"
-                class="form-control"
-                required
-              />
-            </div>
+        <!-- DoD / Military details -->
+        <div class="col-md-4">
+          <label for="dodAffiliation" class="form-label">DoD Affiliation</label>
+          <select
+            class="form-select"
+            id="dodAffiliation"
+            name="dodAffiliation"
+            required
+          >
+            <option value="">Choose...</option>
+            <option value="Active Duty">Active Duty</option>
+            <option value="Retired">Retired</option>
+            <option value="Guard/Reserve">Guard / Reserve</option>
+            <option value="DoD Civilian">DoD Civilian</option>
+            <option value="Sponsored Guest">Sponsored Guest</option>
+          </select>
+        </div>
 
-            <div class="col-md-6">
-              <label for="email" class="form-label">Email</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                class="form-control"
-                required
-              />
-            </div>
+        <div class="col-md-4">
+          <label for="branch" class="form-label">Branch</label>
+          <select class="form-select" id="branch" name="branch" required>
+            <option value="">Choose...</option>
+            <option value="USAF">USAF</option>
+            <option value="USSF">USSF</option>
+            <option value="USA">USA</option>
+            <option value="USN">USN</option>
+            <option value="USMC">USMC</option>
+            <option value="USCG">USCG</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
 
-            <div class="col-md-6">
-              <label for="username" class="form-label">Username</label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                class="form-control"
-                autocomplete="username"
-                required
-              />
-            </div>
+        <div class="col-md-4">
+          <label for="rank" class="form-label">Rank / Grade</label>
+          <input
+            type="text"
+            class="form-control"
+            id="rank"
+            name="rank"
+            placeholder="e.g., MSgt / E-7"
+            required
+          />
+        </div>
 
-            <div class="col-md-6">
-              <label for="password" class="form-label">Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                class="form-control"
-                autocomplete="new-password"
-                required
-              />
-            </div>
+        <!-- Party / pets -->
+        <div class="col-md-4">
+          <label for="numAdults" class="form-label">Number of adults</label>
+          <input
+            type="number"
+            class="form-control"
+            id="numAdults"
+            name="numAdults"
+            min="1"
+            value="1"
+            required
+          />
+        </div>
+        <div class="col-md-4">
+          <label for="numPets" class="form-label">Number of pets</label>
+          <input
+            type="number"
+            class="form-control"
+            id="numPets"
+            name="numPets"
+            min="0"
+            value="0"
+            required
+          />
+        </div>
+        <div class="col-md-4">
+          <label for="petBreedNotes" class="form-label">Pet breed notes</label>
+          <input
+            type="text"
+            class="form-control"
+            id="petBreedNotes"
+            name="petBreedNotes"
+            placeholder="Optional (e.g. 2x golden retrievers)"
+          />
+        </div>
 
-            <div class="col-md-6">
-              <label for="confirmPassword" class="form-label">Confirm Password</label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                class="form-control"
-                autocomplete="new-password"
-                required
-              />
-            </div>
-
-            <hr class="mt-4 mb-2">
-
-            <!-- DoD affiliation section -->
-            <div class="col-12">
-              <h2 class="h6 fw-semibold mb-1">DoD Affiliation</h2>
-              <p class="text-muted small mb-2">
-                This information is used to verify eligibility and apply the correct rate plans.
-              </p>
-            </div>
-
-            <div class="col-md-4">
-              <label for="dodAffiliation" class="form-label">DoD Affiliation</label>
-              <select id="dodAffiliation" name="dodAffiliation" class="form-select" required>
-                <option value="">Select affiliation...</option>
-                <option value="Active Duty">Active Duty</option>
-                <option value="Reserve">Reserve</option>
-                <option value="National Guard">National Guard</option>
-                <option value="Retired">Retired</option>
-                <option value="Veteran">Veteran</option>
-                <option value="DoD Civilian">DoD Civilian</option>
-                <option value="Family Member">Family Member</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            <div class="col-md-4">
-              <label for="branch" class="form-label">Branch</label>
-              <select id="branch" name="branch" class="form-select" required>
-                <option value="">Select branch...</option>
-                <option value="Army">Army</option>
-                <option value="Navy">Navy</option>
-                <option value="Air Force">Air Force</option>
-                <option value="Marine Corps">Marine Corps</option>
-                <option value="Space Force">Space Force</option>
-                <option value="Coast Guard">Coast Guard</option>
-                <option value="DoD / Other">DoD / Other</option>
-              </select>
-            </div>
-
-            <div class="col-md-4">
-              <label for="rank" class="form-label">Rank / Grade</label>
-              <input
-                id="rank"
-                name="rank"
-                type="text"
-                class="form-control"
-                placeholder="e.g., E-6, O-3, GS-12"
-                required
-              />
-            </div>
-
-            <hr class="mt-4 mb-2">
-
-            <!-- Occupancy / pets -->
-            <div class="col-12">
-              <h2 class="h6 fw-semibold mb-1">Occupancy & Pets</h2>
-              <p class="text-muted small mb-2">
-                This helps us assign appropriate sites and ensure we’re following base policies.
-              </p>
-            </div>
-
-            <div class="col-md-4">
-              <label for="numAdults" class="form-label">Number of Adults</label>
-              <input
-                id="numAdults"
-                name="numAdults"
-                type="number"
-                min="1"
-                class="form-control"
-                value="1"
-                required
-              />
-            </div>
-
-            <div class="col-md-4">
-              <label for="numPets" class="form-label">Number of Pets</label>
-              <input
-                id="numPets"
-                name="numPets"
-                type="number"
-                min="0"
-                class="form-control"
-                value="0"
-                required
-              />
-            </div>
-
-            <div class="col-md-4">
-              <label for="petBreedNotes" class="form-label">Pet Breed / Notes (optional)</label>
-              <input
-                id="petBreedNotes"
-                name="petBreedNotes"
-                type="text"
-                class="form-control"
-                placeholder="e.g., 1 lab, 1 small mixed breed"
-              />
-            </div>
-
-            <div class="col-12">
-              <div class="form-check mt-2">
+        <!-- Pet disclaimer -->
+        <div class="col-12">
+          <div class="card bg-light border-0 mb-3">
+            <div class="card-body py-3">
+              <div class="form-check">
                 <input
                   class="form-check-input"
                   type="checkbox"
                   id="petDisclaimerAccepted"
                   name="petDisclaimerAccepted"
-                  value="true"
                   required
                 />
                 <label class="form-check-label small" for="petDisclaimerAccepted">
-                  I understand that certain breeds may be restricted by base policy and that I am
-                  responsible for my pets’ behavior, vaccinations, and leash requirements.
+                  I understand that certain breeds may be restricted on Hill AFB and
+                  that I am responsible for complying with all base pet policies.
                 </label>
               </div>
             </div>
+          </div>
+        </div>
 
-            <!-- Submit -->
-            <div class="col-12 mt-4">
-              <div class="alert alert-info small mb-3" role="alert">
-                <strong>Privacy Notice:</strong> Your information is used solely for reservation and eligibility purposes. We do not share your data except as required by law. By registering, you agree to our <a href="#" tabindex="-1">privacy policy</a>.
+        <!-- Base access confirmation -->
+        <div class="col-12">
+          <div class="card bg-light border-0 mb-3">
+            <div class="card-body py-3">
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="baseAccessConfirmed"
+                  name="baseAccessConfirmed"
+                  required
+                />
+                <label class="form-check-label small" for="baseAccessConfirmed">
+                  I confirm that I have valid access to Hill AFB (or will be properly
+                  sponsored) and can get on base for my stay.
+                </label>
               </div>
-              <button type="submit" class="btn btn-primary w-100">
-                <i class="bi bi-person-check me-1"></i> Create Account
-              </button>
-            </div>
-
-            <div class="col-12 text-center mt-2 small">
-              Already have an account?
-              <a href="/login" class="link-offset-1">Sign in</a>
             </div>
           </div>
-        </form>
-      </section>
+        </div>
+
+        <!-- Submit -->
+        <div class="col-12 mt-4">
+          <button type="submit" class="btn btn-primary">
+            Create account
+          </button>
+        </div>
+      </form>
     </main>
 
     <%- include('partials/footer') %>
