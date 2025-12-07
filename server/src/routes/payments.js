@@ -31,12 +31,17 @@ router.get("/:reservationId", async (req, res) => {
 
         const r = rows[0];
 
+        // Debug: print reservation and user info
+        console.log('DEBUG /payments/:reservationId', { reservation: r, user: req.session && req.session.user });
+
         // Nights
         const nights = nightsBetween(r.checkIn, r.checkOut);
 
         // Rate
-        const nightlyRate = await activeRateFor(r.siteType, r.checkIn);
 
+        // activeRateFor returns an object { nightlyRate }
+        const rateResult = await activeRateFor(r.siteType, r.checkIn);
+        const nightlyRate = rateResult.nightlyRate;
         const totalAmount = nights * nightlyRate;
 
         res.render("payments", {
@@ -72,11 +77,11 @@ router.post("/process", async (req, res) => {
             [reservationId, amountPaid, txnId]
         );
 
-        // Mark reservation as COMPLETED
+        // Mark reservation as COMPLETED and set paymentMethod
         await pool.query(
             `
       UPDATE Reservation
-      SET status = 'COMPLETED'
+      SET status = 'COMPLETED', paymentMethod = 'Credit Card', paid = 1
       WHERE id = ?
       `,
             [reservationId]

@@ -33,13 +33,12 @@
 
       <!-- Site Type -->
       <div class="mb-3">
-        <label class="form-label">Type (e.g., RV, Tent, Pull-through)</label>
-        <input 
-          class="form-control" 
-          name="type"
-          required
-          value="<%= site ? site.type : '' %>"
-        >
+        <label class="form-label">Type</label>
+        <select class="form-select" name="type" required>
+          <option value="BACK_IN" <%= site && site.type === 'BACK_IN' ? 'selected' : '' %>>Back-In</option>
+          <option value="PULL_THRU" <%= site && site.type === 'PULL_THRU' ? 'selected' : '' %>>Pull-Thru</option>
+          <option value="TENT" <%= site && site.type === 'TENT' ? 'selected' : '' %>>Tent</option>
+        </select>
       </div>
 
       <!-- Max Rig Length -->

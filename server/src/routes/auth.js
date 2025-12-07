@@ -12,7 +12,9 @@ function hashPassword(password) {
 // --- LOGIN ---
 
 router.get('/login', (req, res) => {
-  res.render('login', { error: null });
+  let next = req.query.next || '';
+  if (next.startsWith('/login')) next = '';
+  res.render('login', { error: null, next, currentUser: req.session.user || null });
 });
 
 router.post('/login', async (req, res) => {
@@ -27,14 +29,14 @@ router.post('/login', async (req, res) => {
   if (!user) {
     return res
       .status(401)
-      .render('login', { error: 'Invalid username or password.' });
+      .render('login', { error: 'Invalid username or password.', currentUser: null });
   }
 
   const passwordHash = hashPassword(password);
   if (user.password_hash !== passwordHash) {
     return res
       .status(401)
-      .render('login', { error: 'Invalid username or password.' });
+      .render('login', { error: 'Invalid username or password.', currentUser: null });
   }
 
   req.session.user = {
@@ -43,15 +45,21 @@ router.post('/login', async (req, res) => {
     role: user.role,
     firstName: user.first_name,
     lastName: user.last_name,
+    email: user.email,
+    name: (user.first_name && user.last_name) ? `${user.first_name} ${user.last_name}` : user.username
   };
 
+  // Only redirect to next if it's a valid, non-login path
+  let next = req.body.next || '';
+  if (next && !next.startsWith('/login')) {
+    return res.redirect(next);
+  }
   if (user.role === 'admin') {
     return res.redirect('/admin/dashboard');
   }
   if (user.role === 'employee') {
     return res.redirect('/employee/dashboard');
   }
-
   return res.redirect('/guest/dashboard');
 });
 
@@ -153,6 +161,8 @@ router.post('/register', async (req, res) => {
       role: 'customer',
       firstName,
       lastName,
+      email,
+      name: (firstName && lastName) ? `${firstName} ${lastName}` : username
     };
 
     res.redirect('/guest/dashboard');

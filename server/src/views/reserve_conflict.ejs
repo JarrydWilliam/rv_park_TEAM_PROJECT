@@ -55,14 +55,15 @@
                         </span>
                       </td>
                       <td class="text-end">
-                        <form method="get" action="/reserve/new" class="d-inline">
+                        <form method="post" action="/reservations/<%= reservationId %>/edit" class="d-inline">
                           <input type="hidden" name="siteId" value="<%= s.id %>">
-                          <input type="hidden" name="check_in" value="<%= checkIn %>">
-                          <input type="hidden" name="check_out" value="<%= checkOut %>">
-                          <input type="hidden" name="rig_length" value="<%= rigLengthFt %>">
-                          <input type="hidden" name="type" value="<%= type || '' %>">
+                          <input type="hidden" name="checkIn" value="<%= checkIn %>">
+                          <input type="hidden" name="checkOut" value="<%= checkOut %>">
+                          <input type="hidden" name="rigLengthFt" value="<%= rigLengthFt %>">
+                          <input type="hidden" name="guestName" value="<%= guestName %>">
+                          <input type="hidden" name="guestEmail" value="<%= guestEmail %>">
                           <button type="submit" class="btn btn-sm btn-primary">
-                            Reserve this site
+                            Move reservation here
                           </button>
                         </form>
                       </td>

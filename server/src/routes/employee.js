@@ -4,11 +4,31 @@ const pool = require('../db/pool');
 const { requireRole } = require('../middleware/auth');
 const { nightsBetween, activeRateFor, toDate } = require('../utils/policy');
 
-/* ============================================================
-   EMPLOYEE DASHBOARD
-   ============================================================ */
-router.get('/dashboard', requireRole('employee'), (req, res) => {
-  return res.render('employee/dashboard', { currentUser: req.session.user || null });
+// ============================================================
+// Select customer before making a reservation
+router.get('/reservations/select-customer', requireRole('employee'), async (req, res) => {
+  const [customers] = await pool.query(
+    "SELECT id, first_name, last_name, email, username FROM users WHERE role = 'customer'"
+  );
+  res.render('employee/select_customer', {
+    customers,
+    currentUser: req.session.user || null
+  });
+});
+// ============================================================
+router.get('/dashboard', requireRole('employee'), async (req, res) => {
+  // Quick stats for employee view
+  const [[stats]] = await pool.query(`
+    SELECT
+      (SELECT COUNT(*) FROM users WHERE role='customer') AS totalCustomers,
+      (SELECT COUNT(*) FROM Reservation WHERE status='CONFIRMED') AS totalReservations,
+      (SELECT COUNT(*) FROM Reservation WHERE paid=0 AND status='CONFIRMED') AS unpaidReservations
+  `);
+
+  res.render('employee/dashboard', {
+    stats,
+    currentUser: req.session.user || null
+  });
 });
 
 /* ============================================================
@@ -101,13 +121,13 @@ router.get('/reservations/new', requireRole('employee'), async (req, res) => {
 
   res.render('employee/reservation_form', {
     reservation: null,
-    guest,
-    userId,
-    checkIn,
-    checkOut,
-    rigLengthFt,
-    availableSites,
-    error,
+    guest: guest || null,
+    userId: userId || null,
+    checkIn: checkIn || null,
+    checkOut: checkOut || null,
+    rigLengthFt: rigLengthFt || null,
+    availableSites: availableSites || [],
+    error: error || null,
     currentUser: req.session.user || null
   });
 });
@@ -118,10 +138,16 @@ router.post('/reservations/new', requireRole('employee'), async (req, res) => {
 
     // Load guest
     const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
-    const guest = rows[0];
+    const guest = rows[0] || null;
     if (!guest) {
       return res.render('employee/reservation_form', {
         error: 'Guest not found.',
+        guest: null,
+        userId: userId || null,
+        checkIn: checkIn || null,
+        checkOut: checkOut || null,
+        rigLengthFt: rigLengthFt || null,
+        availableSites: [],
         currentUser: req.session.user || null
       });
     }

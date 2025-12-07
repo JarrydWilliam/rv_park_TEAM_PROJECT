@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('partials/head', { title: 'Welcome to Hill AFB RV Park' }) %>
+  </head>
+  <body>
+    <%- include('partials/nav') %>
+    <main class="container py-4">
+      <h1 class="h3 mb-3">Welcome to Hill AFB RV Park</h1>
+      <p class="text-muted mb-4">
+        Browse our park, check availability, and log in or register to book your stay.
+      </p>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <a href="/search" class="card card-elevated text-decoration-none">
+            <div class="card-body">
+              <h2 class="h5 mb-1">Search Availability</h2>
+              <p class="text-muted mb-0">Find and book available RV sites.</p>
+            </div>
+          </a>
+        </div>
+        <div class="col-md-6">
+          <a href="/login" class="card card-elevated text-decoration-none">
+            <div class="card-body">
+              <h2 class="h5 mb-1">Sign In / Register</h2>
+              <p class="text-muted mb-0">Access your dashboard and manage reservations.</p>
+            </div>
+          </a>
+        </div>
+      </div>
+    </main>
+    <%- include('partials/footer') %>
+  </body>
+</html>

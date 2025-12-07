@@ -7,8 +7,6 @@ const router = express.Router();
 // --- Guest dashboard ---
 router.get('/guest/dashboard', (req, res) => {
   return res.render('guest/dashboard');
-
- 
 });
 
 // --- Employee dashboard ---

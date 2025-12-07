@@ -1,3 +1,4 @@
+
 const express = require('express');
 const pool = require('../db/pool');
 const {
@@ -8,226 +9,133 @@ const {
   stayTouchesSpecialEvent,
 } = require('../utils/policy');
 const { requireAuth, requireRole } = require('../middleware/auth');
-
 const router = express.Router();
 
-/* ============================================================
-   GET /reservations/:id/edit
-   ============================================================ */
-router.get('/reservations/:id/edit', requireAuth, async (req, res) => {
+// Handle reservation edit (POST)
+router.post('/:id/edit', async (req, res) => {
+    // Debug logging for conflict detection (after id is defined)
+    // We'll log after all variables are initialized, just before the conflict check
   const id = Number(req.params.id);
-
-  const [resRows] = await pool.query(
-    'SELECT * FROM Reservation WHERE id = ? LIMIT 1',
-    [id]
-  );
-  const r = resRows[0];
-
-  if (!r) {
-    return res.render('edit_reservation', {
-      r: null,
-      error: 'Reservation not found.',
-    });
-  }
-
-  res.render('edit_reservation', { r });
-});
-
-/* ============================================================
-   EMPLOYEE FIND BY CONFIRMATION CODE
-   ============================================================ */
-router.get(
-  '/employee/reservations/find',
-  requireRole('employee'),
-  async (req, res) => {
-    const { code } = req.query;
-
-    if (!code) {
-      return res.render('employee/reservation_form', {
-        error: 'Confirmation code is required.',
-      });
-    }
-
-    const [rows] = await pool.query(
-      'SELECT id FROM Reservation WHERE confirmationCode = ? LIMIT 1',
-      [code]
-    );
-    const r = rows[0];
-
-    if (!r) {
-      return res.render('employee/reservation_form', {
-        error: 'No reservation found under that confirmation code.',
-      });
-    }
-
-    res.redirect(`/reservations/${r.id}/edit`);
-  }
-);
-
-/* ============================================================
-   POST /reservations/:id/edit
-   ============================================================ */
-router.post('/reservations/:id/edit', requireAuth, async (req, res) => {
-  const id = Number(req.params.id);
-  const { checkIn, checkOut, guestName, guestEmail, rigLengthFt } = req.body;
-
-  const [existingRows] = await pool.query(
-    'SELECT * FROM Reservation WHERE id = ? LIMIT 1',
-    [id]
-  );
+  // Accept all fields from reserve_conflict or edit form
+  let { guestName, guestEmail, rigLengthFt, checkIn, checkOut, siteId: newSiteId } = req.body;
+  const [existingRows] = await pool.query('SELECT * FROM Reservation WHERE id = ? LIMIT 1', [id]);
   const existing = existingRows[0];
-
   if (!existing) {
-    return res.render('edit_reservation', {
-      r: null,
-      error: 'Reservation not found.',
-    });
+    return res.render('edit_reservation', { r: null, error: 'Reservation not found.' });
   }
-
-  const siteId = existing.siteId;
-
+  // Use POSTed values if present, otherwise fallback to existing
+  guestName = guestName || existing.guestName;
+  guestEmail = guestEmail || existing.guestEmail;
+  rigLengthFt = rigLengthFt || existing.rigLengthFt;
+  let siteId = newSiteId || existing.siteId;
+  let siteChanged = false;
+  // Only validate date strings, do not convert to JS Date for DB
+  if (!checkIn || !/^\d{4}-\d{2}-\d{2}$/.test(checkIn)) {
+    return res.render('edit_reservation', { r: existing, error: 'Invalid check-in date.' });
+  }
+  if (!checkOut || !/^\d{4}-\d{2}-\d{2}$/.test(checkOut)) {
+    return res.render('edit_reservation', { r: existing, error: 'Invalid check-out date.' });
+  }
+  // For nightsBetween and logic, use Date objects, but save raw strings to DB
   const checkInDate = toDate(checkIn);
   const checkOutDate = toDate(checkOut);
-
-  if (!checkInDate || isNaN(checkInDate.getTime())) {
-    return res.render('edit_reservation', {
-      r: existing,
-      error: 'Invalid check-in date.',
-    });
-  }
-  if (!checkOutDate || isNaN(checkOutDate.getTime())) {
-    return res.render('edit_reservation', {
-      r: existing,
-      error: 'Invalid check-out date.',
-    });
-  }
   if (checkOutDate <= checkInDate) {
-    return res.render('edit_reservation', {
-      r: existing,
-      error: 'Check-out date must be after check-in date.',
-    });
+    return res.render('edit_reservation', { r: existing, error: 'Check-out date must be after check-in date.' });
   }
-
   const newNights = nightsBetween(checkInDate, checkOutDate);
-
+  console.log('DEBUG: Edit reservation', {
+    reservationId: id,
+    siteId,
+    checkIn,
+    checkOut,
+    checkInDate,
+    checkOutDate
+  });
   // Re-check availability (excluding this reservation)
   const [conflicts] = await pool.query(
-    `
-    SELECT id FROM Reservation
-    WHERE siteId = ?
-      AND id <> ?
-      AND status = 'CONFIRMED'
-      AND NOT (checkOut <= ? OR checkIn >= ?)
-  `,
-    [siteId, id, checkInDate, checkOutDate]
+    `SELECT id, siteId, checkIn, checkOut FROM Reservation WHERE siteId = ? AND id <> ? AND status = 'CONFIRMED' AND NOT (checkOut <= ? OR checkIn >= ?)`,
+    [siteId, id, checkIn, checkOut]
   );
-
+  console.log('DEBUG: Conflicts found:', conflicts);
   if (conflicts.length > 0) {
-    return res.render('edit_reservation', {
-      r: existing,
-      error: 'Site is no longer available for those dates.',
+    // Find alternative available sites
+    const [alternatives] = await pool.query(
+      `SELECT s.* FROM Site s WHERE s.active = 1 AND s.lengthFt >= ? AND s.id NOT IN (
+        SELECT siteId FROM Reservation WHERE status = 'CONFIRMED' AND NOT (checkOut <= ? OR checkIn >= ?)
+      ) ORDER BY s.id ASC`,
+      [rigLengthFt, checkIn, checkOut]
+    );
+    // Pass all required info to reserve_conflict for edit
+    return res.render('reserve_conflict', {
+      reservationId: id,
+      site: { number: existing.siteNumber || existing.siteId },
+      checkIn,
+      checkOut,
+      rigLengthFt,
+      guestName,
+      guestEmail,
+      alternatives
     });
   }
-
   // Recalculate amount
-  const oldAmount = Number(existing.amountPaid || 0);
-
   let nightlyRate = Number(existing.nightlyRate || 0);
   if (!nightlyRate || isNaN(nightlyRate)) {
     const rateObj = await activeRateFor(existing.type || 'STANDARD', checkInDate);
     nightlyRate = rateObj.nightlyRate || nightlyRate;
   }
-
   const newAmount = nightlyRate * newNights;
-
-  // Update reservation (clean final merged version)
+  // Update reservation (save raw date strings)
   await pool.query(
-    `
-      UPDATE Reservation
-      SET checkIn = ?,
-          checkOut = ?,
-          guestName = ?,
-          guestEmail = ?,
-          rigLengthFt = ?,
-          amountPaid = ?,
-          nightlyRate = ?
-      WHERE id = ?
-    `,
-    [
-      checkInDate,
-      checkOutDate,
-      guestName,
-      guestEmail,
-      rigLengthFt,
-      newAmount,
-      nightlyRate,
-      id,
-    ]
+    `UPDATE Reservation SET siteId = ?, checkIn = ?, checkOut = ?, guestName = ?, guestEmail = ?, rigLengthFt = ?, amountPaid = ?, nightlyRate = ? WHERE id = ?`,
+    [siteId, checkIn, checkOut, guestName, guestEmail, rigLengthFt, newAmount, nightlyRate, id]
   );
-
-  /* ============================================================
-     OPTIONAL – RECORD ADJUSTMENT (REFUND OR ADDITIONAL CHARGE)
-     ============================================================ */
-  let adjustment = null;
-
-  if (!isNaN(oldAmount) && !isNaN(newAmount) && nightlyRate > 0) {
-    const diff = Number((newAmount - oldAmount).toFixed(2));
-
-    if (diff < 0) {
-      adjustment = { type: 'refund', amount: Math.abs(diff) };
-    } else if (diff > 0) {
-      adjustment = { type: 'additional', amount: diff };
-    }
-
-    if (adjustment) {
-      const userId =
-        req.session.user && req.session.user.id ? req.session.user.id : null;
-      const txnId =
-        'ADJ-' + Math.random().toString(36).substring(2, 10).toUpperCase();
-
-      await pool.query(
-        `
-        INSERT INTO Payment
-          (reservationId, userId, amount, paymentMethod, status, transactionId, createdAt)
-        VALUES (?, ?, ?, ?, ?, ?, NOW())
-      `,
-        [
-          id,
-          userId,
-          adjustment.type === 'refund' ? -adjustment.amount : adjustment.amount,
-          'Adjustment',
-          'Completed',
-          txnId,
-        ]
-      );
-    }
-  }
-
   // Reload updated reservation
   const [updatedRows] = await pool.query(
-    `
-      SELECT r.*, s.number AS siteNumber, s.lengthFt, s.type AS siteType
-      FROM Reservation r
-      JOIN Site s ON s.id = r.siteId
-      WHERE r.id = ?
-      LIMIT 1
-    `,
+    `SELECT r.*, s.number AS siteNumber, s.lengthFt, s.type AS siteType FROM Reservation r JOIN Site s ON s.id = r.siteId WHERE r.id = ? LIMIT 1`,
     [id]
   );
-
   const r = updatedRows[0];
-  res.render('confirm', { r, adjustment });
+  res.render('confirm', { r, siteChanged });
 });
+
+// Edit reservation page
+router.get('/:id/edit', async (req, res) => {
+  const id = Number(req.params.id);
+  const [resRows] = await pool.query('SELECT * FROM Reservation WHERE id = ? LIMIT 1', [id]);
+  const r = resRows[0];
+  if (!r) {
+    return res.render('edit_reservation', { r: null, error: 'Reservation not found.' });
+  }
+  res.render('edit_reservation', { r });
+});
+
+// --- Place all your route handlers here, after router initialization ---
+
+// Example: Delete reservation
+router.post('/:id/delete', async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    await pool.query('DELETE FROM Reservation WHERE id = ?', [id]);
+    // Redirect to the guest's list of reservations after deletion
+    res.redirect('/guest/my_reservations');
+  } catch (e) {
+    res.status(500).send('Failed to delete reservation.');
+  }
+});
+
+// ...existing route handlers (GET/POST for reservations, confirm, etc.)...
 
 /* ============================================================
    GET /reserve/new
    ============================================================ */
-router.get('/reserve/new', requireAuth, async (req, res) => {
+router.get('/reserve/new', async (req, res) => {
+    // DEBUG: Log session user and role
+    console.log('DEBUG /reserve/new session.user:', req.session.user);
   try {
     const { siteId, check_in, check_out, rig_length, type } = req.query;
 
     if (!siteId || !check_in || !check_out || !rig_length) {
-      return res.render('reserve', { error: 'Missing required parameters.' });
+      return res.render('reserve', { error: 'Missing required parameters.', site: null, query: {} });
     }
 
     const siteIdNum = Number(siteId);
@@ -237,10 +145,11 @@ router.get('/reserve/new', requireAuth, async (req, res) => {
       'SELECT * FROM Site WHERE id = ? AND active = 1',
       [siteIdNum]
     );
+    console.log('DEBUG /reserve/new siteRows:', siteRows);
     const site = siteRows[0];
 
     if (!site) {
-      return res.render('reserve', { error: 'Site not found or inactive.' });
+      return res.render('reserve', { error: 'Site not found or inactive.', site: null, query: {} });
     }
 
     const checkInDate = toDate(check_in);
@@ -251,6 +160,7 @@ router.get('/reserve/new', requireAuth, async (req, res) => {
       return res.render('reserve', {
         error: 'Invalid date range.',
         site,
+        query: req.body || {},
       });
     }
 
@@ -258,6 +168,7 @@ router.get('/reserve/new', requireAuth, async (req, res) => {
       return res.render('reserve', {
         error: 'Rig is too long for this site.',
         site,
+        query: req.body || {},
       });
     }
 
@@ -265,10 +176,14 @@ router.get('/reserve/new', requireAuth, async (req, res) => {
       return res.render('reserve', {
         error: 'Stays cannot exceed 14 nights within peak season.',
         site,
+        query: req.body || {},
       });
     }
 
-    res.render('reserve', {
+    // Only skip reserve.ejs for users with role 'customer'
+    // Always show the reserve.ejs form for all users
+    // Otherwise, show the reserve.ejs form
+    const renderObj = {
       site,
       query: {
         check_in,
@@ -276,34 +191,55 @@ router.get('/reserve/new', requireAuth, async (req, res) => {
         rig_length: String(rigLengthNum),
         type: type || '',
       },
+      guest: req.session.user || null,
       error: null,
-    });
+    };
+    console.log('DEBUG /reserve/new rendering with:', renderObj);
+    res.render('reserve', renderObj);
   } catch (e) {
-    res.render('reserve', { error: String(e) });
+    res.render('reserve', { error: String(e), site: null, query: {} });
   }
 });
 
 /* ============================================================
    POST /reserve
    ============================================================ */
-router.post('/reserve', requireAuth, async (req, res) => {
+router.post('/reserve', async (req, res) => {
   try {
-    const {
+    let {
       siteId,
       guestName,
       guestEmail,
       rigLengthFt,
       pcs,
-      type,
+      checkIn,
+      checkOut
     } = req.body;
 
+    // If guestName or guestEmail are missing, use values from logged-in user
+    if ((!guestName || !guestEmail) && req.session && req.session.user) {
+      if (!guestName) guestName = req.session.user.name || req.session.user.username || '';
+      if (!guestEmail) guestEmail = req.session.user.email || '';
+    }
+
+    // Validate guestName and guestEmail
+    if (!guestName || !guestEmail) {
+      return res.render('reserve', { error: 'Missing guest name or email.' });
+    }
+
+    // Validate siteId
+    if (!siteId || isNaN(Number(siteId))) {
+      return res.render('reserve', { error: 'Invalid or missing site selection.' });
+    }
+    if (!checkIn || !checkOut) {
+      return res.render('reserve', { error: 'Missing check-in or check-out date.' });
+    }
     const siteIdNum = Number(siteId);
     const rigLengthNum = Number(rigLengthFt);
-
-    const { checkIn, checkOut } = pcs;
     const checkInDate = toDate(checkIn);
     const checkOutDate = toDate(checkOut);
 
+    // Check that site exists and is active
     const [siteRows] = await pool.query(
       'SELECT * FROM Site WHERE id = ? AND active = 1',
       [siteIdNum]
@@ -359,25 +295,27 @@ router.post('/reserve', requireAuth, async (req, res) => {
     const confirmationCode =
       'R' + Date.now().toString(36).toUpperCase();
 
-    // CREATE RESERVATION (no nights column)
+    // CREATE RESERVATION (now includes guestId)
+    const guestId = req.session && req.session.user ? req.session.user.id : null;
     const [result] = await pool.query(
       `
       INSERT INTO Reservation
-        (siteId, guestName, guestEmail, checkIn, checkOut,
-         rigLengthFt, type, nightlyRate, amountPaid, status, confirmationCode)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMED', ?)
+        (siteId, guestId, guestName, guestEmail, checkIn, checkOut,
+         rigLengthFt, nightlyRate, amountPaid, status, confirmationCode)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
       [
         siteIdNum,
+        guestId,
         guestName,
         guestEmail,
         checkIn,
         checkOut,
         rigLengthNum,
-        type || site.type,
         nightlyRate,
         totalAmount,
-        confirmationCode,
+        'CONFIRMED',
+        confirmationCode
       ]
     );
 

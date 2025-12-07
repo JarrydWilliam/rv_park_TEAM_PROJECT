@@ -13,6 +13,22 @@
       </p>
 
       <form method="post" action="/reservations/<%= r.id %>/edit" class="card card-elevated p-3 p-md-4">
+        <% if (typeof alternatives !== 'undefined' && alternatives && alternatives.length > 0) { %>
+          <div class="alert alert-warning mt-3">
+            <strong>Site unavailable for selected dates.</strong><br>
+            Please select an available site below to move your reservation:
+          </div>
+          <div class="mb-3">
+            <label for="siteId" class="form-label">Available Sites</label>
+            <select id="siteId" name="siteId" class="form-select" required>
+              <% alternatives.forEach(function(site) { %>
+                <option value="<%= site.id %>">
+                  Site <%= site.number %> - <%= site.type %> (Max Length: <%= site.lengthFt %> ft)
+                </option>
+              <% }); %>
+            </select>
+          </div>
+        <% } %>
         <div class="row g-3">
           <div class="col-md-6">
             <label for="guestName" class="form-label">Guest Name</label>
@@ -58,7 +74,7 @@
               name="checkIn"
               type="date"
               class="form-control"
-              value="<%= r.checkIn.toISOString ? r.checkIn.toISOString().slice(0,10) : r.checkIn.toString().slice(0,10) %>"
+              value="<%= r.checkIn %>"
               required
             />
           </div>
@@ -70,20 +86,20 @@
               name="checkOut"
               type="date"
               class="form-control"
-              value="<%= r.checkOut.toISOString ? r.checkOut.toISOString().slice(0,10) : r.checkOut.toString().slice(0,10) %>"
+              value="<%= r.checkOut %>"
               required
             />
           </div>
         </div>
 
-        <div class="d-flex justify-content-between mt-4">
-          <!-- 👇 this is the important part -->
-          <a href="/employee/reservations" class="btn btn-outline-secondary">
-            Cancel
-          </a>
-          <button type="submit" class="btn btn-primary">
-            Save Changes
-          </button>
+        <div class="d-flex justify-content-between mt-4 gap-2">
+          <a href="/employee/reservations" class="btn btn-outline-secondary">Cancel</a>
+          <div class="d-flex gap-2">
+            <form method="post" action="/reservations/<%= r.id %>/delete" style="display:inline;">
+              <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this reservation?');">Delete</button>
+            </form>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </div>
         </div>
       </form>
     </main>

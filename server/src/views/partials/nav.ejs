@@ -70,7 +70,7 @@
           <!-- CUSTOMER NAVIGATION -->
 
           <li class="nav-item">
-            <a class="nav-link" href="/dashboard">Dashboard</a>
+            <a class="nav-link" href="/guest/dashboard">Dashboard</a>
           </li>
 
           <li class="nav-item">
@@ -83,24 +83,22 @@
 
       <!-- Right side: user info + logout -->
       <ul class="navbar-nav ms-auto">
-
         <% if (currentUser) { %>
           <li class="nav-item">
             <span class="navbar-text text-white-50 me-3">
               Logged in as <strong><%= currentUser.username %></strong>
             </span>
           </li>
-
           <li class="nav-item">
-            <a class="nav-link text-warning" href="/logout">Logout</a>
+            <form action="/logout" method="post" style="display:inline;">
+              <button type="submit" class="nav-link btn btn-link text-warning p-0" style="text-decoration: none;">Logout</button>
+            </form>
           </li>
-
         <% } else { %>
           <li class="nav-item">
             <a class="nav-link text-warning" href="/login">Login</a>
           </li>
         <% } %>
-
       </ul>
     </div>
   </div>

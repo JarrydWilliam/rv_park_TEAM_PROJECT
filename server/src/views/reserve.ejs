@@ -1,16 +1,30 @@
+<% if (typeof guest === 'undefined') { guest = null; } %>
+<% if (typeof site === 'undefined') { site = null; } %>
+<% if (typeof query === 'undefined') { query = {}; } %>
 <!doctype html>
 <html lang="en">
   <head>
     <%- include('partials/head') %>
   </head>
   <body>
+
     <%- include('partials/nav') %>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-danger mt-3 mb-0" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i><%= error %>
+      </div>
+    <% } %>
 
     <header class="page-hero">
       <div class="container">
         <h1 class="display-6 fw-semibold mb-1">Complete Your Reservation</h1>
         <p class="text-muted mb-0">
-          Site <strong>#<%= site.number %></strong> · <%= site.type %> · <%= site.lengthFt %> ft
+          <% if (site) { %>
+            Site <strong>#<%= site.number %></strong> · <%= site.type %> · <%= site.lengthFt %> ft
+          <% } else { %>
+            Site information unavailable
+          <% } %>
         </p>
       </div>
     </header>
@@ -31,49 +45,26 @@
               <dd class="col-sm-9"><%= query.rig_length %> ft</dd>
 
               <dt class="col-sm-3">Site type</dt>
-              <dd class="col-sm-9"><%= query.type || site.type %></dd>
+              <dd class="col-sm-9"><%= query.type || (site ? site.type : '') %></dd>
             </dl>
           </div>
 
           <hr>
 
-          <form method="post" action="/reserve" class="row g-3">
+          <form method="post" action="/reservations/reserve" class="row g-3">
             <!-- Hidden fields to carry search context -->
-            <input type="hidden" name="siteId" value="<%= site.id %>">
+            <input type="hidden" name="siteId" value="<%= site ? site.id : '' %>">
             <input type="hidden" name="checkIn" value="<%= query.check_in %>">
             <input type="hidden" name="checkOut" value="<%= query.check_out %>">
             <input type="hidden" name="rigLengthFt" value="<%= query.rig_length %>">
-            <input type="hidden" name="type" value="<%= query.type || site.type %>">
-
-            <div class="col-md-6">
-              <label class="form-label">Guest name</label>
-              <input type="text" name="guestName" class="form-control" required>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label">Guest email</label>
-              <input type="email" name="guestEmail" class="form-control" required>
-            </div>
-
-            <div class="col-12">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="pcs" id="pcsCheck">
-                <label class="form-check-label" for="pcsCheck">
-                  PCS orders (exempt from some peak limits)
-                </label>
-              </div>
-            </div>
 
             <div class="col-12 d-flex justify-content-end gap-2">
-              <div class="alert alert-info small mb-3" role="alert">
-                <strong>Cancellation Policy:</strong> Cancellations must be made at least 24 hours before check-in to avoid a penalty. See our <a href="#" tabindex="-1">full policy</a> for details.
-              </div>
               <a href="/search?check_in=<%= query.check_in %>&check_out=<%= query.check_out %>&rig_length=<%= query.rig_length %>&type=<%= query.type || '' %>"
                  class="btn btn-outline-secondary">
                 Back to search
               </a>
               <button type="submit" class="btn btn-primary">
-                Confirm reservation
+                Continue to Payment
               </button>
             </div>
           </form>

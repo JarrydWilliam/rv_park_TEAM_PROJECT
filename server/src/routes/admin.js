@@ -1,7 +1,13 @@
+
 const express = require('express');
 const router = express.Router();
 const pool = require('../db/pool');
 const { requireRole } = require('../middleware/auth');
+
+// Redirect /admin to /admin/dashboard
+router.get('/', (req, res) => {
+  res.redirect('/admin/dashboard');
+});
 
 // Protect all admin routes
 router.use(requireRole('admin'));
@@ -9,7 +15,7 @@ router.use(requireRole('admin'));
 /**
  * GET /admin/dashboard
  */
-router.get('/admin/dashboard', async (req, res) => {
+router.get('/dashboard', async (req, res) => {
   const currentUser = req.session.user || null;
 
   const [[counts]] = await pool.query(`
@@ -25,15 +31,15 @@ router.get('/admin/dashboard', async (req, res) => {
 /**
  * GET /admin/sites
  */
-router.get('/admin/sites', async (req, res) => {
+router.get('/sites', async (req, res) => {
   const [sites] = await pool.query('SELECT * FROM Site ORDER BY number ASC');
-  res.render('admin/sites', { sites, currentUser: req.session.user || null });
+  res.render('admin/sites', { sites, currentUser: req.session.user || null, fromEmployee: false });
 });
 
 /**
  * GET /admin/sites/new
  */
-router.get('/admin/sites/new', async (req, res) => {
+router.get('/sites/new', async (req, res) => {
   res.render('admin/site_form', {
     site: null,
     currentUser: req.session.user || null,
@@ -43,8 +49,32 @@ router.get('/admin/sites/new', async (req, res) => {
 /**
  * POST /admin/sites/new
  */
-router.post('/admin/sites/new', async (req, res) => {
+router.post('/sites/new', async (req, res) => {
   const { number, type, lengthFt, description, active } = req.body;
+
+
+  // Validate site number is provided and a valid number
+  if (!number || isNaN(Number(number))) {
+    return res.render('admin/site_form', {
+      site: req.body,
+      currentUser: req.session.user || null,
+      error: 'Please provide a valid site number.'
+    });
+  }
+
+  // Check if an active site with the same number already exists
+  const [existing] = await pool.query(
+    'SELECT * FROM Site WHERE number = ? AND active = 1',
+    [Number(number)]
+  );
+  if (existing.length > 0) {
+    // Render form with error message
+    return res.render('admin/site_form', {
+      site: req.body,
+      currentUser: req.session.user || null,
+      error: 'A site with this number is already active.'
+    });
+  }
 
   await pool.query(
     `
@@ -60,7 +90,7 @@ router.post('/admin/sites/new', async (req, res) => {
 /**
  * GET /admin/sites/:id/edit
  */
-router.get('/admin/sites/:id/edit', async (req, res) => {
+router.get('/sites/:id/edit', async (req, res) => {
   const [rows] = await pool.query('SELECT * FROM Site WHERE id = ?', [
     req.params.id,
   ]);
@@ -77,8 +107,34 @@ router.get('/admin/sites/:id/edit', async (req, res) => {
 /**
  * POST /admin/sites/:id/edit
  */
-router.post('/admin/sites/:id/edit', async (req, res) => {
+router.post('/sites/:id/edit', async (req, res) => {
   const { number, type, lengthFt, description, active } = req.body;
+  const validTypes = ['BACK_IN', 'PULL_THRU', 'TENT'];
+  if (!type || !validTypes.includes(type)) {
+    return res.render('admin/site_form', {
+      site: { ...req.body, id: req.params.id },
+      currentUser: req.session.user || null,
+      error: 'Please select a valid site type.'
+    });
+  }
+
+  // Validate site number is provided and a valid number
+
+  if (!number || isNaN(Number(number))) {
+    return res.render('admin/site_form', {
+      site: { ...req.body, id: req.params.id },
+      currentUser: req.session.user || null,
+      error: 'Please provide a valid site number.'
+    });
+  }
+
+  if (!lengthFt || isNaN(Number(lengthFt))) {
+    return res.render('admin/site_form', {
+      site: { ...req.body, id: req.params.id },
+      currentUser: req.session.user || null,
+      error: 'Please provide a valid max length (ft).' 
+    });
+  }
 
   await pool.query(
     `
@@ -112,7 +168,7 @@ router.post('/sites/:id/delete', requireRole('admin'), async (req, res) => {
 /**
  * GET /admin/walkin_reports
  */
-router.get('/admin/walkin_reports', async (req, res) => {
+router.get('/walkin_reports', async (req, res) => {
   const [sites] = await pool.query(
     'SELECT * FROM Site WHERE active = 1 ORDER BY number ASC'
   );
@@ -165,14 +221,14 @@ router.get('/admin/walkin_reports', async (req, res) => {
 /**
  * GET /admin/reports
  */
-router.get('/admin/reports', async (req, res) => {
+router.get('/reports', async (req, res) => {
   res.render('admin/reports', { currentUser: req.session.user || null });
 });
 
 /**
  * GET /admin/daily_report
  */
-router.get('/admin/daily_report', async (req, res) => {
+router.get('/daily_report', async (req, res) => {
   const [rows] = await pool.query(`
     SELECT
       s.id,
@@ -202,7 +258,7 @@ router.get('/admin/daily_report', async (req, res) => {
 /**
  * GET /admin/availability_report
  */
-router.get('/admin/availability_report', async (req, res) => {
+router.get('/availability_report', async (req, res) => {
   const { date } = req.query;
 
   const toDate = (d) => new Date(d + 'T00:00:00');
@@ -242,7 +298,7 @@ router.get('/admin/availability_report', async (req, res) => {
 /**
  * GET /admin/walkins/unpaid
  */
-router.get('/admin/walkins/unpaid', async (req, res) => {
+router.get('/walkins/unpaid', async (req, res) => {
   const [walkins] = await pool.query(`
     SELECT *,
       DATEDIFF(checkOut, checkIn) AS nights,
@@ -262,7 +318,7 @@ router.get('/admin/walkins/unpaid', async (req, res) => {
  * NEW — POST /admin/walkins/mark-paid/:id
  * Fixes: Cannot POST /admin/walkins/mark-paid/18
  */
-router.post('/admin/walkins/mark-paid/:id', async (req, res) => {
+router.post('/walkins/mark-paid/:id', async (req, res) => {
   await pool.query('UPDATE Reservation SET paid = 1 WHERE id = ?', [
     req.params.id,
   ]);
@@ -274,7 +330,7 @@ router.post('/admin/walkins/mark-paid/:id', async (req, res) => {
  * GET /admin/users
  * Fixes "message is not defined"
  */
-router.get('/admin/users', async (req, res) => {
+router.get('/users', async (req, res) => {
   const message = req.query.msg || null;
   const error = req.query.err || null;
 
@@ -297,9 +353,10 @@ router.get('/admin/users', async (req, res) => {
 /**
  * POST /admin/users/new
  */
-router.post('/admin/users/new', async (req, res) => {
+router.post('/users/new', async (req, res) => {
   try {
     const { username, email, role } = req.body;
+
 
     await pool.query(
       `
@@ -326,6 +383,24 @@ router.post('/admin/users/new', async (req, res) => {
   } catch (err) {
     console.error('Admin create user error:', err);
     return res.redirect('/admin/users?err=Error%20creating%20user');
+  }
+});
+
+/**
+ * POST /admin/users/:id/role - Promote or demote a user's role
+ */
+router.post('/users/:id/role', async (req, res) => {
+  const { role } = req.body;
+  const validRoles = ['admin', 'employee', 'customer'];
+  if (!validRoles.includes(role)) {
+    return res.redirect('/admin/users?err=Invalid%20role');
+  }
+  try {
+    await pool.query('UPDATE users SET role = ? WHERE id = ?', [role, req.params.id]);
+    return res.redirect('/admin/users?msg=User%20role%20updated');
+  } catch (err) {
+    console.error('Error updating user role:', err);
+    return res.redirect('/admin/users?err=Error%20updating%20role');
   }
 });
 

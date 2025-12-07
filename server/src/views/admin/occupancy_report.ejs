@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <%- include('../partials/head', { title: 'Occupancy Report' }) %>
+  </head>
+  <body>
+    <% if (typeof currentUser === 'undefined') { currentUser = null; } %>
+    <%- include('../partials/nav') %>
+    <main class="container py-4">
+      <h1 class="h3 mb-3">Occupancy Report</h1>
+      <p class="text-muted mb-4">Shows all current reservations for today, including guest, site, check-in, check-out, and status.</p>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Reservation ID</th>
+              <th>Site Number</th>
+              <th>Guest Name</th>
+              <th>Check-In</th>
+              <th>Check-Out</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!report || report.length === 0) { %>
+              <tr>
+                <td colspan="6" class="text-center text-muted py-4">No current reservations found.</td>
+              </tr>
+            <% } else { %>
+              <% report.forEach(r => { %>
+                <tr>
+                  <td><%= r.id %></td>
+                  <td><%= r.siteNumber || r.siteId %></td>
+                  <td><%= r.guestName || '-' %></td>
+                  <td><%= r.checkIn %></td>
+                  <td><%= r.checkOut %></td>
+                  <td><span class="badge <%= r.status === 'CONFIRMED' ? 'bg-success' : 'bg-secondary' %>"><%= r.status %></span></td>
+                </tr>
+              <% }); %>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </main>
+    <%- include('../partials/footer') %>
+  </body>
+</html>

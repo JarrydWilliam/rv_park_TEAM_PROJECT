@@ -121,6 +121,7 @@ router.get('/', async (req, res) => {
     error: null,
     rigBounds,
     todayIso,
+    currentUser: req.session && req.session.user ? req.session.user : null,
   });
 });
 
@@ -140,6 +141,7 @@ router.get('/search', async (req, res) => {
         error: 'Please provide check-in, check-out, and rig length.',
         rigBounds,
         todayIso,
+        currentUser: req.session && req.session.user ? req.session.user : null,
       });
     }
 
@@ -151,6 +153,7 @@ router.get('/search', async (req, res) => {
         error: 'Rig length must be a positive number.',
         rigBounds,
         todayIso,
+        currentUser: req.session && req.session.user ? req.session.user : null,
       });
     }
 
@@ -167,6 +170,7 @@ router.get('/search', async (req, res) => {
         error: 'One or both dates are invalid.',
         rigBounds,
         todayIso,
+        currentUser: req.session && req.session.user ? req.session.user : null,
       });
     }
 
@@ -177,6 +181,7 @@ router.get('/search', async (req, res) => {
         error: 'Check-in date cannot be in the past.',
         rigBounds,
         todayIso,
+        currentUser: req.session && req.session.user ? req.session.user : null,
       });
     }
 
@@ -187,6 +192,7 @@ router.get('/search', async (req, res) => {
         error: 'Check-out date must be after the check-in date.',
         rigBounds,
         todayIso,
+        currentUser: req.session && req.session.user ? req.session.user : null,
       });
     }
 
@@ -204,6 +210,7 @@ router.get('/search', async (req, res) => {
       error: null,
       rigBounds,
       todayIso,
+      currentUser: req.session && req.session.user ? req.session.user : null,
     });
   } catch (e) {
     res.render('search', {
@@ -212,6 +219,7 @@ router.get('/search', async (req, res) => {
       error: String(e),
       rigBounds,
       todayIso,
+      currentUser: req.session && req.session.user ? req.session.user : null,
     });
   }
 });
@@ -273,6 +281,7 @@ router.get('/vacancy', async (req, res) => {
       error: null,
       rigBounds,
       todayIso,
+      currentUser: req.session && req.session.user ? req.session.user : null,
     });
   } catch (e) {
     const today = startOfToday();
@@ -284,6 +293,7 @@ router.get('/vacancy', async (req, res) => {
       error: String(e),
       rigBounds,
       todayIso,
+      currentUser: req.session && req.session.user ? req.session.user : null,
     });
   }
 });

@@ -15,6 +15,11 @@
         </p>
       </div>
     </header>
+<% if (typeof siteChanged !== 'undefined' && siteChanged) { %>
+  <div class="alert alert-warning mt-3">
+    <strong>Notice:</strong> Your reservation was moved to a different site to accommodate your new dates.
+  </div>
+<% } %>
 <% if (typeof adjustment !== 'undefined' && adjustment && adjustment.amount > 0) { %>
   <div class="alert alert-info mt-3">
     <% if (adjustment.type === 'refund') { %>
@@ -50,10 +55,10 @@
             </dd>
 
             <dt class="col-sm-3">Dates</dt>
-            <dd class="col-sm-9">
-              <%= r.checkIn.toISOString ? r.checkIn.toISOString().slice(0,10) : r.checkIn.toString().slice(0,10) %>
+			<dd class="col-sm-9">
+              <%= r.checkIn %>
               &rarr;
-              <%= r.checkOut.toISOString ? r.checkOut.toISOString().slice(0,10) : r.checkOut.toString().slice(0,10) %>
+              <%= r.checkOut %>
             </dd>
 
             <dt class="col-sm-3">Rig length</dt>
@@ -68,7 +73,8 @@
             <dt class="col-sm-3">Status</dt>
             <dd class="col-sm-9"><%= r.status %></dd>
           </dl>
-            <div class="d-flex gap-2 mt-4">
+            <div class="d-flex justify-content-between gap-2 mt-4">
+              <a href="/guest/dashboard" class="btn btn-secondary">Return to Dashboard</a>
               <a href="/reservations/<%= r.id %>/edit" class="btn btn-outline-primary">Edit reservation</a>
             </div>
         </div>

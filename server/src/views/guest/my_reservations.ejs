@@ -30,11 +30,11 @@
                 <tr>
                   <td><%= r.siteNumber || r.siteId %></td>
                   <td><%= r.siteType || '' %></td>
-                  <td><%= r.checkIn.toISOString ? r.checkIn.toISOString().slice(0,10) : r.checkIn.toString().slice(0,10) %></td>
-                  <td><%= r.checkOut.toISOString ? r.checkOut.toISOString().slice(0,10) : r.checkOut.toString().slice(0,10) %></td>
+                  <td><%= r.checkIn %></td>
+                  <td><%= r.checkOut %></td>
                   <td><span class="badge <%= r.status === 'CANCELLED' ? 'bg-danger' : 'bg-success' %>"><%= r.status %></span></td>
                   <td>
-                    <a href="/confirm/<%= r.confirmationCode %>" class="btn btn-sm btn-outline-primary">View</a>
+                    <a href="/reservations/confirm/<%= r.confirmationCode %>" class="btn btn-sm btn-outline-primary">View</a>
                     <% if (r.status !== 'CANCELLED') { %>
                       <a href="/reservations/<%= r.id %>/edit" class="btn btn-sm btn-outline-secondary">Edit</a>
                     <% } %>

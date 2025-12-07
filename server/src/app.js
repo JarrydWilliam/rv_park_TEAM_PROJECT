@@ -1,10 +1,16 @@
+// Allow /reserve/new at root to redirect to /reservations/reserve/new
+
+// ========================
+// Imports and Setup
+// ========================
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
 require('dotenv').config();
 
+// Route imports
 const authRoutes = require('./routes/auth');
-const dashboardRoutes = require('./routes/dashboard');   
+const dashboardRoutes = require('./routes/dashboard');
 const searchRoutes = require('./routes/search');
 const reservationRoutes = require('./routes/reservations');
 const systemRoutes = require('./routes/system');
@@ -13,51 +19,58 @@ const reportsRoutes = require('./routes/reports');
 const adminRoutes = require('./routes/admin');
 const guestRoutes = require('./routes/guest');
 const employeeRoutes = require('./routes/employee');
-
 const { requireRole } = require('./middleware/auth');
 
 const app = express();
 
+// ========================
+// Middleware
+// ========================
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-app.use(
-  express.static(path.join(__dirname, '../public'), {
-    maxAge: '7d',
-    setHeaders: (res, filePath) => {
-      if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
-    },
-  })
-);
+app.use(express.static(path.join(__dirname, '../public'), {
+  maxAge: '7d',
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
+  },
+}));
 
-// Body parsers
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-// Sessions (for login, roles, etc.)
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || 'dev-rv-park-secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 2, 
-    },
-  })
-);
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'dev-rv-park-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 2,
+  },
+}));
 
-// Register guest routes after session middlewar
-app.use('/', guestRoutes);
-app.use('/employee', employeeRoutes);
-
+// Set locals for all views
 app.use((req, res, next) => {
   res.locals.title = res.locals.title || 'RV Park';
-  res.locals.currentUser = req.session.user || null; 
+  res.locals.currentUser = req.session.user || null;
   next();
 });
 
+// ========================
+// Routes
+// ========================
+app.use('/', authRoutes);
+app.use('/guest', guestRoutes);
+app.use('/employee', employeeRoutes);
+app.use('/admin', adminRoutes);
+app.use('/', dashboardRoutes);
+app.use('/system', systemRoutes);
+app.use('/reservations', reservationRoutes);
+app.use('/payments', paymentsRoutes);
+app.use('/reports', requireRole('admin'), reportsRoutes);
+app.use('/search', searchRoutes);
+
+// Root route
 app.get('/', (req, res) => {
-  // If logged in, send them to the appropriate dashboard
   if (req.session && req.session.user) {
     if (req.session.user.role === 'admin') {
       return res.redirect('/admin/dashboard');
@@ -68,29 +81,16 @@ app.get('/', (req, res) => {
     // default: customer / guest
     return res.redirect('/guest/dashboard');
   }
-
-  // If NOT logged in, show the guest dashboard as a public landing page
-  return res.render('guest/dashboard');
+  return res.render('home');
 });
 
-app.use('/', authRoutes);
-app.use('/', searchRoutes);
-app.use('/', reservationRoutes);
-
-// ---------- ROUTE MOUNTS ----------
-
-app.use('/', authRoutes);
-
-app.use('/', dashboardRoutes); 
-app.use('/', adminRoutes);
-
-app.use('/', searchRoutes);
-app.use('/', reservationRoutes);
-app.use('/', systemRoutes);
-
-app.use('/reservations', reservationRoutes);
-app.use('/payments', paymentsRoutes);
-
-app.use('/reports', requireRole('admin'), reportsRoutes);
+// Allow /reserve/new at root to redirect to /reservations/reserve/new
+app.get('/reserve/new', (req, res) => {
+  const query = Object.entries(req.query)
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join('&');
+  res.redirect(`/reservations/reserve/new${query ? '?' + query : ''}`);
+});
 
 module.exports = app;
+// (Removed duplicate route mounts and module.exports)

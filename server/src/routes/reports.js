@@ -11,9 +11,11 @@ router.get('/', (req, res) => {
 router.get('/occupancy', async (req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT r.id, r.siteId, r.checkIn, r.checkOut
+      SELECT r.id, r.siteId, s.number AS siteNumber, r.guestName, r.checkIn, r.checkOut, r.status
       FROM Reservation r
-      ORDER BY r.checkIn DESC
+      JOIN Site s ON s.id = r.siteId
+      WHERE r.checkIn <= CURDATE() AND r.checkOut >= CURDATE()
+      ORDER BY r.siteId, r.checkIn
     `);
     res.render('admin/occupancy_report', { report: rows });
   } catch (err) {
@@ -24,25 +26,43 @@ router.get('/occupancy', async (req, res) => {
 
 // GET /reports/daily - Daily Report: all sites, occupancy status, next check-in
 router.get('/daily', async (req, res) => {
+      const [sites] = await pool.query('SELECT * FROM Site');
+      const [reservations] = await pool.query('SELECT * FROM Reservation WHERE checkOut >= CURDATE()');
+    // Move debug logging after sites and reservations are defined
+    // Already declared above, do not redeclare
   try {
     const [sites] = await pool.query('SELECT * FROM Site');
     const [reservations] = await pool.query('SELECT * FROM Reservation WHERE checkOut >= CURDATE()');
     // Map site occupancy and next check-in
     const today = new Date().toISOString().slice(0, 10);
     const siteStatus = sites.map(site => {
-      // Find current reservation
-      const current = reservations.find(r => r.siteId === site.id && r.checkIn <= today && r.checkOut >= today);
-      // Find next future check-in
-      const future = reservations
-        .filter(r => r.siteId === site.id && r.checkIn > today)
-        .sort((a, b) => new Date(a.checkIn) - new Date(b.checkIn))[0];
-      return {
+      // Find current reservation using string comparison
+      // Convert reservation checkIn/checkOut to YYYY-MM-DD for comparison
+      const current = reservations.find(r => {
+        const resCheckIn = typeof r.checkIn === 'string' ? r.checkIn.slice(0,10) : r.checkIn.toISOString().slice(0,10);
+        const resCheckOut = typeof r.checkOut === 'string' ? r.checkOut.slice(0,10) : r.checkOut.toISOString().slice(0,10);
+        return Number(r.siteId) === Number(site.id) && resCheckIn <= today && resCheckOut >= today;
+      });
+      console.log('DEBUG: Site', site.id, 'today', today, 'current', current);
+      let info = {
         siteId: site.id,
         siteNumber: site.number,
         type: site.type,
         status: current ? 'Occupied' : 'Unoccupied',
-        nextCheckIn: future ? future.checkIn : null
+        currentCheckIn: null,
+        currentCheckOut: null,
+        nextCheckIn: null
       };
+      if (current) {
+        info.currentCheckIn = current.checkIn;
+        info.currentCheckOut = current.checkOut;
+      } else {
+        const future = reservations
+          .filter(r => r.siteId === site.id && r.checkIn > today)
+          .sort((a, b) => a.checkIn.localeCompare(b.checkIn))[0];
+        info.nextCheckIn = future ? future.checkIn : null;
+      }
+      return info;
     });
     res.render('admin/daily_report', { sites: siteStatus });
   } catch (err) {

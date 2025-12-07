@@ -16,7 +16,7 @@
               <th>Site Number</th>
               <th>Type</th>
               <th>Status</th>
-              <th>Next Check-In</th>
+              <th>Current/Next Reservation</th>
             </tr>
           </thead>
           <tbody>
@@ -32,7 +32,16 @@
                   <td>
                     <span class="badge <%= site.status === 'Occupied' ? 'bg-danger' : 'bg-success' %>"><%= site.status || '-' %></span>
                   </td>
-                  <td><%= site.nextCheckIn || '-' %></td>
+                  <td>
+                    <% if (site.status === 'Occupied') { %>
+                      <strong>Check-In:</strong> <%= site.currentCheckIn %><br>
+                      <strong>Check-Out:</strong> <%= site.currentCheckOut %>
+                    <% } else if (site.nextCheckIn) { %>
+                      <strong>Next Check-In:</strong> <%= site.nextCheckIn %>
+                    <% } else { %>
+                      -
+                    <% } %>
+                  </td>
                 </tr>
               <% }) %>
             <% } %>
