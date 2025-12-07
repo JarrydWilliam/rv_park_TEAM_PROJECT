@@ -1,4 +1,4 @@
-// server/src/db/bootstrap.js
+﻿// server/src/db/bootstrap.js
 //
 // On startup, this does:
 //  1) Try to connect as app user (team/team123) to rvpark.
@@ -13,9 +13,32 @@ require('dotenv').config();
 const mysql = require('mysql2/promise');
 
 async function ensureSchemaAndSeed(conn) {
-  // ---- Core tables ----
+  // ---- USERS TABLE – used for login/registration and roles ----
+  await conn.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id                       INT AUTO_INCREMENT PRIMARY KEY,
+      username                 VARCHAR(50) NOT NULL UNIQUE,
+      email                    VARCHAR(100) NOT NULL,
+      first_name               VARCHAR(50) NOT NULL,
+      last_name                VARCHAR(50) NOT NULL,
+      password_hash            CHAR(64) NOT NULL,
+      role                     ENUM('customer', 'employee', 'admin') NOT NULL DEFAULT 'customer',
 
-  // Site table (used by /search and /vacancy)
+      dod_affiliation          VARCHAR(50) NOT NULL,
+      branch                   VARCHAR(50) NOT NULL,
+      rank_grade               VARCHAR(20) NOT NULL,
+
+      num_adults               INT NOT NULL DEFAULT 1,
+      num_pets                 INT NOT NULL DEFAULT 0,
+      pet_breed_notes          VARCHAR(255),
+      pet_disclaimer_accepted  TINYINT(1) NOT NULL DEFAULT 0,
+      base_access_confirmed    TINYINT(1) NOT NULL DEFAULT 0,
+
+      created_at               TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // ---- Site table (used by /search and /vacancy) ----
   await conn.query(`
     CREATE TABLE IF NOT EXISTS Site (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -28,7 +51,7 @@ async function ensureSchemaAndSeed(conn) {
     )
   `);
 
-  // Reservation table (used by /reserve, /confirm, /cancel)
+  // ---- Reservation table (used by /reserve, /confirm, /cancel) ----
   await conn.query(`
     CREATE TABLE IF NOT EXISTS Reservation (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -36,17 +59,25 @@ async function ensureSchemaAndSeed(conn) {
       guestId INT,
       guestName VARCHAR(100) NOT NULL,
       guestEmail VARCHAR(255) NOT NULL,
-      rigLengthFt INT NOT NULL,
+
       checkIn DATE NOT NULL,
       checkOut DATE NOT NULL,
+      nights INT NOT NULL DEFAULT 0,
+
+      rigLengthFt INT NOT NULL,
+      type VARCHAR(20),
+
       pcs TINYINT(1) NOT NULL DEFAULT 0,
-      confirmationCode VARCHAR(16) NOT NULL,
+      confirmationCode VARCHAR(32) NOT NULL,
+
       nightlyRate DECIMAL(10,2) NOT NULL DEFAULT 0,
       amountPaid DECIMAL(10,2) NOT NULL DEFAULT 0,
       paymentMethod VARCHAR(32) DEFAULT NULL,
       paid TINYINT(1) NOT NULL DEFAULT 0,
+
       status ENUM('CONFIRMED','CANCELLED') NOT NULL DEFAULT 'CONFIRMED',
       createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
       CONSTRAINT fk_reservation_site
         FOREIGN KEY (siteId) REFERENCES Site(id)
         ON DELETE CASCADE,
@@ -56,7 +87,7 @@ async function ensureSchemaAndSeed(conn) {
     )
   `);
 
-  // RatePlan table (used by activeRateFor in policy.js)
+  // ---- RatePlan table (used by activeRateFor in policy.js) ----
   await conn.query(`
     CREATE TABLE IF NOT EXISTS RatePlan (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -68,7 +99,7 @@ async function ensureSchemaAndSeed(conn) {
     )
   `);
 
-  // SpecialEvent table (used by stayTouchesSpecialEvent in policy.js)
+  // ---- SpecialEvent table (used by stayTouchesSpecialEvent in policy.js) ----
   await conn.query(`
     CREATE TABLE IF NOT EXISTS SpecialEvent (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -78,14 +109,33 @@ async function ensureSchemaAndSeed(conn) {
     )
   `);
 
+  // ---- Payment / Transaction table ----
+  await conn.query(`
+    CREATE TABLE IF NOT EXISTS Payment (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      reservationId INT NOT NULL,
+      userId INT NULL,
+      amount DECIMAL(10,2) NOT NULL,
+      paymentMethod VARCHAR(50) NOT NULL,
+      status VARCHAR(20) NOT NULL,
+      transactionId VARCHAR(64) NOT NULL,
+      notes VARCHAR(255),
+      createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT fk_payment_reservation
+        FOREIGN KEY (reservationId) REFERENCES Reservation(id)
+        ON DELETE CASCADE,
+      CONSTRAINT fk_payment_user
+        FOREIGN KEY (userId) REFERENCES users(id)
+        ON DELETE SET NULL
+    )
+  `);
+
   console.log('✅ Tables ensured.');
 
   // ---- Seed data (only when empty) ----
 
   // Seed Site
-  const [siteCountRows] = await conn.query(
-    'SELECT COUNT(*) AS cnt FROM Site'
-  );
+  const [siteCountRows] = await conn.query('SELECT COUNT(*) AS cnt FROM Site');
   if (siteCountRows[0].cnt === 0) {
     await conn.query(`
       INSERT INTO Site (number, type, lengthFt, description, active) VALUES
@@ -135,9 +185,7 @@ async function ensureSchemaAndSeed(conn) {
   }
 
   // Seed RatePlan
-  const [rateCountRows] = await conn.query(
-    'SELECT COUNT(*) AS cnt FROM RatePlan'
-  );
+  const [rateCountRows] = await conn.query('SELECT COUNT(*) AS cnt FROM RatePlan');
   if (rateCountRows[0].cnt === 0) {
     await conn.query(`
       INSERT INTO RatePlan (siteType, nightlyRate, startDate, endDate, active)
@@ -178,9 +226,7 @@ async function bootstrapDb() {
   const rootPass = process.env.DB_ROOT_PASSWORD || '';
 
   console.log('=== RV Park DB Bootstrap (OLD project) ===');
-  console.log(
-    `DB host: ${host}:${port}, DB name: ${dbName}, app user: ${appUser}`
-  );
+  console.log(`DB host: ${host}:${port}, DB name: ${dbName}, app user: ${appUser}`);
 
   // STEP 1: Try existing DB with app user (team/team123)
   let appConn;
@@ -193,18 +239,14 @@ async function bootstrapDb() {
       database: dbName,
       multipleStatements: true,
     });
-    console.log(
-      '✅ MySQL is reachable and RV Park DB already exists (app user).'
-    );
-    // Even if DB exists, make sure tables + seed exist:
+    console.log('✅ MySQL is reachable and RV Park DB already exists (app user).');
+
     await ensureSchemaAndSeed(appConn);
     await appConn.end();
     console.log('✅ RV Park DB bootstrap complete (app user path).');
     return;
   } catch (err) {
-    console.log(
-      'ℹ  Could not connect as app user yet. Will check MySQL/root next.'
-    );
+    console.log('ℹ  Could not connect as app user yet. Will check MySQL/root next.');
     console.log(
       `   App-user error code: ${err.code || 'N/A'}, message: ${err.message}`
     );
@@ -221,7 +263,7 @@ async function bootstrapDb() {
       multipleStatements: true,
     });
 
-    console.log(' MySQL server is running and root credentials worked.');
+    console.log('✅ MySQL server is running and root credentials worked.');
     console.log('   Creating/verifying RV Park DB and user...');
 
     // Create database if it doesn't exist
@@ -234,32 +276,17 @@ async function bootstrapDb() {
       `CREATE USER IF NOT EXISTS '${appUser}'@'localhost' IDENTIFIED BY ?;`,
       [appPass]
     );
- // USERS TABLE – used for login/registration and roles
-  await conn.query(`
-    CREATE TABLE IF NOT EXISTS users (
-      id              INT AUTO_INCREMENT PRIMARY KEY,
-      username        VARCHAR(50) NOT NULL UNIQUE,
-      email           VARCHAR(100) NOT NULL,
-      first_name      VARCHAR(50) NOT NULL,
-      last_name       VARCHAR(50) NOT NULL,
-      password_hash   CHAR(64) NOT NULL,
-      role            ENUM('customer', 'employee', 'admin') NOT NULL DEFAULT 'customer',
-
-      dod_affiliation VARCHAR(50) NOT NULL,
-      branch          VARCHAR(50) NOT NULL,
-      rank_grade      VARCHAR(20) NOT NULL,
-
-      num_adults      INT NOT NULL DEFAULT 1,
-      num_pets        INT NOT NULL DEFAULT 0,
-      pet_breed_notes VARCHAR(255),
-      pet_disclaimer_accepted TINYINT(1) NOT NULL DEFAULT 0,
-
-      created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    await rootConn.query(
+      `CREATE USER IF NOT EXISTS '${appUser}'@'%' IDENTIFIED BY ?;`,
+      [appPass]
     );
-  `);
+
     // Grant privileges on this DB
     await rootConn.query(
       `GRANT ALL PRIVILEGES ON \`${dbName}\`.* TO '${appUser}'@'localhost';`
+    );
+    await rootConn.query(
+      `GRANT ALL PRIVILEGES ON \`${dbName}\`.* TO '${appUser}'@'%';`
     );
 
     await rootConn.query('FLUSH PRIVILEGES;');
@@ -282,7 +309,7 @@ async function bootstrapDb() {
     console.log('✅ RV Park DB bootstrap complete (root path).');
   } catch (err) {
     if (err.code === 'ECONNREFUSED') {
-      console.error(' Could not connect to MySQL at:', `${host}:${port}`);
+      console.error('❌ Could not connect to MySQL at:', `${host}:${port}`);
       console.error(
         '   This usually means MySQL is not installed or the MySQL service is not running.'
       );
@@ -296,10 +323,7 @@ async function bootstrapDb() {
         '   Or manually create the rvpark database and team/team123 user if you prefer.'
       );
     } else {
-      console.error(
-        ' Unexpected error while checking/creating MySQL DB/user:',
-        err
-      );
+      console.error('❌ Unexpected error while checking/creating MySQL DB/user:', err);
     }
     throw err;
   }
