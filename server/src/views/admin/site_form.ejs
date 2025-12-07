@@ -1,44 +1,84 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <%- include('../partials/head', { title: 'Site Form' }) %>
-  </head>
-  <body>
-    <%- include('../partials/nav') %>
-    <main class="container py-4">
-      <h1 class="h3 mb-3">Site Form</h1>
-      <p class="text-muted mb-4">Add or edit RV park site details. Sites can be archived/disabled instead of deleted to avoid orphaned reservations.</p>
-      <form method="post" action="/admin/sites/save">
-        <div class="mb-3">
-          <label for="number" class="form-label">Site Number</label>
-          <input type="text" class="form-control" id="number" name="number" value="<%= site?.number || '' %>" required>
-        </div>
-        <div class="mb-3">
-          <label for="type" class="form-label">Type</label>
-          <select class="form-select" id="type" name="type" required>
-            <option value="BACK_IN" <%= site?.type === 'BACK_IN' ? 'selected' : '' %>>Back-In</option>
-            <option value="PULL_THRU" <%= site?.type === 'PULL_THRU' ? 'selected' : '' %>>Pull-Thru</option>
-            <option value="TENT" <%= site?.type === 'TENT' ? 'selected' : '' %>>Tent</option>
-          </select>
-        </div>
-        <div class="mb-3">
-          <label for="lengthFt" class="form-label">Max Length (ft)</label>
-          <input type="number" class="form-control" id="lengthFt" name="lengthFt" value="<%= site?.lengthFt || '' %>" required>
-        </div>
-        <div class="mb-3">
-          <label for="description" class="form-label">Description</label>
-          <textarea class="form-control" id="description" name="description" rows="2"><%= site?.description || '' %></textarea>
-        </div>
-        <div class="mb-3">
-          <label for="active" class="form-label">Status</label>
-          <select class="form-select" id="active" name="active" required>
-            <option value="1" <%= site?.active ? 'selected' : '' %>>Active</option>
-            <option value="0" <%= site && site.active === 0 ? 'selected' : '' %>>Archived</option>
-          </select>
-        </div>
-        <button type="submit" class="btn btn-primary">Save Site</button>
-      </form>
-    </main>
-    <%- include('../partials/footer') %>
-  </body>
+<head>
+  <%- include('../partials/head', { title: site ? 'Edit Site' : 'Create Site' }) %>
+</head>
+<body>
+  <%- include('../partials/nav') %>
+
+  <main class="container py-4">
+
+    <h1 class="h3 mb-4">
+      <%= site ? ('Edit Site #' + site.number) : 'Create New Site' %>
+    </h1>
+
+    <!-- Error Display (Bootstrap Modal Compatible) -->
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+
+    <form method="post" action="<%= site ? ('/admin/sites/' + site.id + '/edit') : '/admin/sites/new' %>">
+      
+      <!-- Site Number -->
+      <div class="mb-3">
+        <label class="form-label">Site Number</label>
+        <input 
+          type="number" 
+          class="form-control"
+          name="number"
+          required
+          value="<%= site ? site.number : '' %>"
+        >
+      </div>
+
+      <!-- Site Type -->
+      <div class="mb-3">
+        <label class="form-label">Type (e.g., RV, Tent, Pull-through)</label>
+        <input 
+          class="form-control" 
+          name="type"
+          required
+          value="<%= site ? site.type : '' %>"
+        >
+      </div>
+
+      <!-- Max Rig Length -->
+      <div class="mb-3">
+        <label class="form-label">Max Length (ft)</label>
+        <input 
+          type="number" 
+          class="form-control" 
+          name="lengthFt"
+          required
+          value="<%= site ? site.lengthFt : '' %>"
+        >
+      </div>
+
+      <!-- Description -->
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea class="form-control" name="description" rows="3"><%= site ? site.description : '' %></textarea>
+      </div>
+
+      <!-- Active Toggle -->
+      <div class="form-check mb-4">
+        <input 
+          type="checkbox" 
+          class="form-check-input" 
+          id="active" 
+          name="active"
+          <%= site && site.active ? 'checked' : '' %>
+        >
+        <label class="form-check-label" for="active">Active</label>
+      </div>
+
+      <!-- Actions -->
+      <button class="btn btn-primary" type="submit">Save Site</button>
+      <a href="/admin/sites" class="btn btn-secondary ms-2">Cancel</a>
+
+    </form>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
 </html>

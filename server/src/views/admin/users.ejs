@@ -1,164 +1,69 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <%- include('../partials/head', { title: 'Manage Users' }) %>
+    <%- include('../partials/head', { title: 'User Management' }) %>
   </head>
   <body>
     <%- include('../partials/nav') %>
 
     <main class="container py-4">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h1 class="h4 mb-1">Manage Users</h1>
-          <p class="text-muted mb-0">Promote users to employee or admin, or set them back to customer.</p>
-        </div>
-        <a href="/admin/dashboard" class="btn btn-sm btn-outline-secondary">
-          <i class="bi bi-arrow-left"></i> Back to Admin Dashboard
-        </a>
-      </div>
 
-            <% if (typeof message !== 'undefined' && message) { %>
+      <h1 class="h3 mb-3">User Management</h1>
+
+      <!-- Success Message -->
+      <% if (typeof message !== 'undefined' && message) { %>
         <div class="alert alert-success"><%= message %></div>
       <% } %>
 
+      <!-- Error Message -->
       <% if (typeof error !== 'undefined' && error) { %>
         <div class="alert alert-danger"><%= error %></div>
       <% } %>
 
- <!-- CREATE USER FORM -->
-      <div class="card card-elevated mb-4">
-        <div class="card-body">
-          <h2 class="h6 fw-semibold mb-3">Create New User</h2>
-          <form class="row g-2" method="post" action="/admin/users/create">
-            <div class="col-md-3">
-              <label class="form-label form-label-sm" for="username">Username</label>
-              <input class="form-control form-control-sm" id="username" name="username" required />
-            </div>
-            <div class="col-md-3">
-              <label class="form-label form-label-sm" for="email">Email</label>
-              <input class="form-control form-control-sm" id="email" name="email" type="email" required />
-            </div>
-            <div class="col-md-3">
-              <label class="form-label form-label-sm" for="firstName">First Name</label>
-              <input class="form-control form-control-sm" id="firstName" name="firstName" required />
-            </div>
-            <div class="col-md-3">
-              <label class="form-label form-label-sm" for="lastName">Last Name</label>
-              <input class="form-control form-control-sm" id="lastName" name="lastName" required />
-            </div>
+      <div class="table-responsive mt-4">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Username</th>
+              <th>Role</th>
+              <th>DoD Affiliation</th>
+              <th>Branch</th>
+              <th>Rank</th>
+              <th>Adults</th>
+              <th>Pets</th>
+            </tr>
+          </thead>
 
-            <div class="col-md-3">
-              <label class="form-label form-label-sm" for="password">Password</label>
-              <input class="form-control form-control-sm" id="password" name="password" type="password" required />
-            </div>
-
-            <div class="col-md-3">
-              <label class="form-label form-label-sm" for="role">Role</label>
-              <select class="form-select form-select-sm" id="role" name="role">
-                <option value="customer">Customer</option>
-                <option value="employee">Employee</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-
-            <div class="col-md-3">
-              <label class="form-label form-label-sm" for="dodAffiliation">DoD Affiliation</label>
-              <input class="form-control form-control-sm" id="dodAffiliation" name="dodAffiliation" placeholder="Optional" />
-            </div>
-            <div class="col-md-3">
-              <label class="form-label form-label-sm" for="branch">Branch</label>
-              <input class="form-control form-control-sm" id="branch" name="branch" placeholder="Optional" />
-            </div>
-
-            <div class="col-md-3">
-              <label class="form-label form-label-sm" for="rankGrade">Rank / Grade</label>
-              <input class="form-control form-control-sm" id="rankGrade" name="rankGrade" placeholder="Optional" />
-            </div>
-            <div class="col-md-3">
-              <label class="form-label form-label-sm" for="numAdults">Adults</label>
-              <input class="form-control form-control-sm" id="numAdults" name="numAdults" type="number" min="1" value="1" />
-            </div>
-            <div class="col-md-3">
-              <label class="form-label form-label-sm" for="numPets">Pets</label>
-              <input class="form-control form-control-sm" id="numPets" name="numPets" type="number" min="0" value="0" />
-            </div>
-            <div class="col-md-3">
-              <label class="form-label form-label-sm" for="petBreedNotes">Pet Notes</label>
-              <input class="form-control form-control-sm" id="petBreedNotes" name="petBreedNotes" placeholder="Optional" />
-            </div>
-
-            <div class="col-12 d-flex justify-content-end mt-2">
-              <button type="submit" class="btn btn-sm btn-primary">
-                <i class="bi bi-person-plus me-1"></i> Create User
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-      
-      <div class="card card-elevated">
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
-              <thead class="table-light">
+          <tbody>
+            <% if (!users || users.length === 0) { %>
+              <tr>
+                <td colspan="10" class="text-center text-muted py-4">
+                  No users found.
+                </td>
+              </tr>
+            <% } else { %>
+              <% users.forEach(u => { %>
                 <tr>
-                  <th>ID</th>
-                  <th>Username</th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>DoD / Branch</th>
-                  <th>Adults / Pets</th>
-                  <th style="width: 180px;">Actions</th>
+                  <td><%= u.id %></td>
+                  <td><%= u.first_name %> <%= u.last_name %></td>
+                  <td><%= u.email %></td>
+                  <td><%= u.username %></td>
+                  <td><%= u.role %></td>
+                  <td><%= u.dod_affiliation %></td>
+                  <td><%= u.branch %></td>
+                  <td><%= u.rank_grade %></td>
+                  <td><%= u.num_adults %></td>
+                  <td><%= u.num_pets %></td>
                 </tr>
-              </thead>
-              <tbody>
-                <% if (!users || users.length === 0) { %>
-                  <tr>
-                    <td colspan="8" class="text-center text-muted py-4">
-                      No users found.
-                    </td>
-                  </tr>
-                <% } else { %>
-                  <% users.forEach(user => { %>
-                    <tr>
-                      <td><%= user.id %></td>
-                      <td><code><%= user.username %></code></td>
-                      <td><%= user.first_name %> <%= user.last_name %></td>
-                      <td><%= user.email %></td>
-                      <td>
-                        <span class="badge bg-secondary text-uppercase">
-                          <%= user.role %>
-                        </span>
-                      </td>
-                      <td>
-                        <div><%= user.dod_affiliation %></div>
-                        <div class="text-muted small"><%= user.branch %></div>
-                      </td>
-                      <td>
-                        <div>Adults: <%= user.num_adults %></div>
-                        <div>Pets: <%= user.num_pets %></div>
-                      </td>
-                      <td>
-                        <form method="post" action="/admin/users/<%= user.id %>/role" class="d-flex gap-2">
-                          <select name="role" class="form-select form-select-sm">
-                            <option value="customer" <%= user.role === 'customer' ? 'selected' : '' %>>Customer</option>
-                            <option value="employee" <%= user.role === 'employee' ? 'selected' : '' %>>Employee</option>
-                            <option value="admin" <%= user.role === 'admin' ? 'selected' : '' %>>Admin</option>
-                          </select>
-                          <button type="submit" class="btn btn-sm btn-primary">
-                            Update
-                          </button>
-                        </form>
-                      </td>
-                    </tr>
-                  <% }) %>
-                <% } %>
-              </tbody>
-            </table>
-          </div>
-        </div>
+              <% }) %>
+            <% } %>
+          </tbody>
+        </table>
       </div>
+
     </main>
 
     <%- include('../partials/footer') %>
