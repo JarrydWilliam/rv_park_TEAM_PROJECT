@@ -10,7 +10,7 @@ const {
   stayTouchesSpecialEvent,
 } = require('../utils/policy');
 const { requireAuth } = require('../middleware/auth');
-
+const { requireRole } = require('../middleware/auth');
 const router = express.Router();
 
 /**
@@ -32,17 +32,40 @@ router.get('/reservations/:id/edit', requireAuth, async (req, res) => {
 
   res.render('edit_reservation', { r });
 });
+/**
+ * GET /employee/reservations/find
+ * Employee tool: enter confirmation code, redirect to the edit page.
+ */
+router.get('/employee/reservations/find', requireRole('employee'), async (req, res) => {
+  const { code } = req.query;
+
+  if (!code) {
+    return res.status(400).send('Confirmation code is required.');
+  }
+
+  const [rows] = await pool.query(
+    'SELECT id FROM Reservation WHERE confirmationCode = ? LIMIT 1',
+    [code]
+  );
+  const r = rows[0];
+
+  if (!r) {
+    return res.status(404).send('No reservation found for that confirmation code.');
+  }
+
+  // Redirect employee to the existing edit page for that reservation ID
+  res.redirect(`/reservations/${r.id}/edit`);
+});
 
 /**
  * POST /reservations/:id/edit
- * Update reservation details and recalculate amount based on existing nightlyRate.
- * Keeps the same nightlyRate, but adjusts amountPaid and shows any refund / extra owed.
+ * Update reservation details and recalculate amount.
  */
-router.post('/reservations/:id/edit', requireAuth, async (req, res) => {
+router.post('/reservations/:id/edit', async (req, res) => {
   const id = Number(req.params.id);
   const { checkIn, checkOut, guestName, guestEmail, rigLengthFt } = req.body;
 
-  // 0) Load existing reservation
+  // 0) Load existing reservation (for old amount + dates + nightlyRate)
   const [existingRows] = await pool.query(
     'SELECT * FROM Reservation WHERE id = ? LIMIT 1',
     [id]
@@ -53,12 +76,18 @@ router.post('/reservations/:id/edit', requireAuth, async (req, res) => {
     return res.status(404).send('Reservation not found.');
   }
 
-  // Old dates + amount
+  // Parse old dates & compute old amount
   const oldCheckIn = toDate(existing.checkIn);
   const oldCheckOut = toDate(existing.checkOut);
   const oldNights = nightsBetween(oldCheckIn, oldCheckOut);
 
-  const nightlyRate = Number(existing.nightlyRate || 0);
+  let nightlyRate = Number(existing.nightlyRate || 0);
+
+  // If nightlyRate is somehow 0 in DB, fall back to a lookup so math still works
+  if (!nightlyRate || isNaN(nightlyRate)) {
+    nightlyRate = await activeRateFor(existing.type || existing.siteType || 'STANDARD', oldCheckIn);
+  }
+
   const oldAmount =
     nightlyRate > 0
       ? nightlyRate * oldNights
@@ -74,18 +103,15 @@ router.post('/reservations/:id/edit', requireAuth, async (req, res) => {
     return res.status(400).send('Check-in date cannot be before today.');
   }
   if (checkOutDate <= checkInDate) {
-    return res.status(400).send('Check-out must be after check-in.');
+    return res.status(400).send('Check-out date must be after check-in date.');
   }
 
   const newNights = nightsBetween(checkInDate, checkOutDate);
-  if (newNights <= 0) {
-    return res.status(400).send('Invalid nights count.');
-  }
 
-  // 2) Recalculate new amount using same nightlyRate
+  // 2) Recalculate new amount using nightlyRate
   const newAmount = nightlyRate * newNights;
 
-  // 3) Update reservation
+  // 3) Update reservation with new dates + new amountPaid
   await pool.query(
     `
       UPDATE Reservation
@@ -94,20 +120,11 @@ router.post('/reservations/:id/edit', requireAuth, async (req, res) => {
           guestName = ?,
           guestEmail = ?,
           rigLengthFt = ?,
-          nightlyRate = ?,
-          amountPaid = ?
+          amountPaid = ?,
+          nightlyRate = ?
       WHERE id = ?
     `,
-    [
-      checkInDate,
-      checkOutDate,
-      guestName,
-      guestEmail,
-      rigLengthFt,
-      nightlyRate,
-      newAmount,
-      id,
-    ]
+    [checkInDate, checkOutDate, guestName, guestEmail, rigLengthFt, newAmount, nightlyRate, id]
   );
 
   // 4) Compute difference for messaging (refund or extra charge)
@@ -128,18 +145,18 @@ router.post('/reservations/:id/edit', requireAuth, async (req, res) => {
 
   // 5) Reload updated reservation + site
   const [updatedRows] = await pool.query(
-    `
-      SELECT r.*, s.number AS siteNumber, s.lengthFt, s.type AS siteType
-      FROM Reservation r
-      JOIN Site s ON s.id = r.siteId
-      WHERE r.id = ?
-      LIMIT 1
-    `,
+    'SELECT * FROM Reservation WHERE id = ? LIMIT 1',
     [id]
   );
   const r = updatedRows[0];
 
-  // 6) Render confirm view with adjustment info
+  const [siteRows] = await pool.query(
+    'SELECT * FROM Site WHERE id = ? LIMIT 1',
+    [r.siteId]
+  );
+  r.site = siteRows[0] || null;
+
+  // 6) Render confirm view directly, with adjustment info
   res.render('confirm', { r, adjustment });
 });
 

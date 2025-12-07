@@ -58,7 +58,7 @@
               name="checkIn"
               type="date"
               class="form-control"
-              value="<%= r.checkIn.toISOString().slice(0, 10) %>"
+              value="<%= r.checkIn.toISOString ? r.checkIn.toISOString().slice(0,10) : r.checkIn.toString().slice(0,10) %>"
               required
             />
           </div>
@@ -70,21 +70,23 @@
               name="checkOut"
               type="date"
               class="form-control"
-              value="<%= r.checkOut.toISOString().slice(0, 10) %>"
+              value="<%= r.checkOut.toISOString ? r.checkOut.toISOString().slice(0,10) : r.checkOut.toString().slice(0,10) %>"
               required
             />
           </div>
         </div>
 
         <div class="d-flex justify-content-between mt-4">
-  <a href="/confirm/<%= r.confirmationCode %>" class="btn btn-outline-secondary">
-    Cancel
-  </a>
-  <button type="submit" class="btn btn-primary">
-    Save Changes
-  </button>
-</div>
-
+          <!-- 👇 this is the important part -->
+          <a href="/employee/reservations" class="btn btn-outline-secondary">
+            Cancel
+          </a>
+          <button type="submit" class="btn btn-primary">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </main>
 
     <%- include('partials/footer') %>
   </body>
