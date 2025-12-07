@@ -148,7 +148,7 @@ router.post('/reservations/:id/edit', requireAuth, async (req, res) => {
   // 3) Recalculate new amount using the same nightlyRate
   const newAmount = nightlyRate * newNights;
 
-  // 4) Update reservation with new dates + new amountPaid + nightlyRate
+    // 4) Update reservation with new dates + new amountPaid + nightlyRate
   await pool.query(
     `
       UPDATE Reservation
@@ -158,8 +158,7 @@ router.post('/reservations/:id/edit', requireAuth, async (req, res) => {
           guestEmail = ?,
           rigLengthFt = ?,
           amountPaid = ?,
-          nightlyRate = ?,
-          nights = ?
+          nightlyRate = ?
       WHERE id = ?
     `,
     [
@@ -170,10 +169,10 @@ router.post('/reservations/:id/edit', requireAuth, async (req, res) => {
       rigLengthFt,
       newAmount,
       nightlyRate,
-      newNights,
       id,
     ]
   );
+
 
   // 5) Optional: record adjustment in Payment table (refund or additional charge)
   let adjustment = null;
@@ -198,23 +197,24 @@ router.post('/reservations/:id/edit', requireAuth, async (req, res) => {
         'ADJ-' + Math.random().toString(36).substring(2, 10).toUpperCase();
 
       await pool.query(
-        `
-          INSERT INTO Payment
-            (reservationId, userId, amount, paymentMethod, status, transactionId, notes, createdAt)
-          VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
-        `,
-        [
-          id,
-          userId,
-          adjustment.type === 'refund'
-            ? -adjustment.amount
-            : adjustment.amount,
-          'Adjustment',
-          adjustment.type === 'refund' ? 'Refund' : 'Additional Charge',
-          txnId,
-          'Reservation date change adjustment',
-        ]
-      );
+  `
+    INSERT INTO Payment
+      (reservationId, userId, amount, paymentMethod, status, transactionId, createdAt)
+    VALUES (?, ?, ?, ?, ?, ?, NOW())
+  `,
+  [
+    id,
+    userId,
+    adjustment.type === 'refund'
+      ? -adjustment.amount   // negative = refund
+      : adjustment.amount,   // positive = extra charge
+    'Adjustment',
+    'Completed',            
+    txnId
+  ]
+);
+
+
     }
   }
 
@@ -548,7 +548,7 @@ router.post('/reservations/:id/cancel', requireAuth, async (req, res) => {
     await pool.query(
       `
         INSERT INTO Payment
-          (reservationId, userId, amount, paymentMethod, status, transactionId, notes, createdAt)
+          (reservationId, userId, amount, paymentMethod, status, transactionId, createdAt)
         VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
       `,
       [

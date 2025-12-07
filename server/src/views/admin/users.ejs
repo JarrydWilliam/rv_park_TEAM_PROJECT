@@ -17,12 +17,14 @@
         </a>
       </div>
 
-      <% if (message) { %>
+            <% if (typeof message !== 'undefined' && message) { %>
         <div class="alert alert-success"><%= message %></div>
       <% } %>
-      <% if (error) { %>
+
+      <% if (typeof error !== 'undefined' && error) { %>
         <div class="alert alert-danger"><%= error %></div>
       <% } %>
+
  <!-- CREATE USER FORM -->
       <div class="card card-elevated mb-4">
         <div class="card-body">
