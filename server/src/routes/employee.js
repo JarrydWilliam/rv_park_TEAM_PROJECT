@@ -7,19 +7,8 @@ const { nightsBetween, activeRateFor, toDate } = require('../utils/policy');
 /* ============================================================
    EMPLOYEE DASHBOARD
    ============================================================ */
-router.get('/dashboard', requireRole('employee'), async (req, res) => {
-  // Quick stats for employee view
-  const [[stats]] = await pool.query(`
-    SELECT
-      (SELECT COUNT(*) FROM users WHERE role='customer') AS totalCustomers,
-      (SELECT COUNT(*) FROM Reservation WHERE status='CONFIRMED') AS totalReservations,
-      (SELECT COUNT(*) FROM Reservation WHERE paid=0 AND status='CONFIRMED') AS unpaidReservations
-  `);
-
-  res.render('employee/dashboard', {
-    stats,
-    currentUser: req.session.user || null
-  });
+router.get('/dashboard', requireRole('employee'), (req, res) => {
+  return res.render('employee/dashboard', { currentUser: req.session.user || null });
 });
 
 /* ============================================================
@@ -87,7 +76,7 @@ router.get('/reservations/new', requireRole('employee'), async (req, res) => {
     const co = new Date(checkOut);
     const today = new Date();
 
-    if (ci < new Date(today.getFullYear(), today.getMonth(), today.getDate()))) {
+    if (ci < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
       error = 'Check-in cannot be in the past.';
     } else if (co <= ci) {
       error = 'Check-out must be after check-in.';
@@ -292,37 +281,19 @@ router.get('/reservations', requireRole('employee'), async (req, res) => {
 });
 
 // (Legacy) Simple reservation creation – left in place in case templates depend on it
-router.get('/reservations/new', requireRole('employee'), async (req, res) => {
-  const [sites] = await pool.query('SELECT * FROM Site WHERE active = 1');
-  res.render('employee/reservation_form', { reservation: null, sites });
-});
-
-router.post('/reservations/new', requireRole('employee'), async (req, res) => {
-  const { siteId, guestName, guestEmail, checkIn, checkOut, rigLengthFt, type } = req.body;
-  await pool.query(
-    `
-      INSERT INTO Reservation
-        (siteId, guestName, guestEmail, checkIn, checkOut, rigLengthFt, type, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `,
-    [siteId, guestName, guestEmail, checkIn, checkOut, rigLengthFt, type, 'CONFIRMED']
-  );
-  res.redirect('/employee/reservations');
-});
 
 // Edit reservation (basic employee flow)
 router.get('/reservations/:id/edit', requireRole('employee'), async (req, res) => {
   const id = req.params.id;
-
-  const [rows] = await pool.query(
-    'SELECT * FROM Reservation WHERE id = ?',
-    [id]
-  );
+  const [rows] = await pool.query('SELECT * FROM Reservation WHERE id = ?', [id]);
   const reservation = rows[0];
   if (!reservation) return res.status(404).send('Reservation not found');
-
-  const [sites] = await pool.query('SELECT * FROM Site WHERE active = 1');
-  res.render('employee/reservation_form', { reservation, sites });
+  let guest = null;
+  if (reservation.guestId) {
+    const [guests] = await pool.query('SELECT * FROM users WHERE id = ?', [reservation.guestId]);
+    guest = guests[0] || null;
+  }
+  res.render('employee/edit_reservation', { reservation, guest, currentUser: req.session.user || null });
 });
 
 router.post('/reservations/:id/edit', requireRole('employee'), async (req, res) => {
@@ -353,39 +324,6 @@ router.post('/reservations/:id/cancel', requireRole('employee'), async (req, res
 });
 
 // Employee user management (older User table – likely unused, left for compatibility)
-router.get('/users', requireRole('employee'), async (req, res) => {
-  const [users] = await pool.query('SELECT * FROM User');
-  res.render('employee/users', { users });
-});
-
-router.get('/users/new', requireRole('employee'), (req, res) => {
-  res.render('employee/user_form', { user: null });
-});
-
-router.post('/users/new', requireRole('employee'), async (req, res) => {
-  const { username, email, role, password } = req.body;
-  await pool.query(
-    'INSERT INTO User (username, email, role, password) VALUES (?, ?, ?, ?)',
-    [username, email, role, password]
-  );
-  res.redirect('/employee/users');
-});
-
-router.get('/users/:id/edit', requireRole('employee'), async (req, res) => {
-  const [rows] = await pool.query('SELECT * FROM User WHERE id = ?', [req.params.id]);
-  const user = rows[0];
-  if (!user) return res.status(404).send('User not found');
-  res.render('employee/user_form', { user });
-});
-
-router.post('/users/:id/edit', requireRole('employee'), async (req, res) => {
-  const { username, email, role } = req.body;
-  await pool.query(
-    'UPDATE User SET username = ?, email = ?, role = ? WHERE id = ?',
-    [username, email, role, req.params.id]
-  );
-  res.redirect('/employee/users');
-});
 
 // List / manage sites (employee view)
 // This handles GET /employee/sites because router is mounted at /employee
