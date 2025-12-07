@@ -6,12 +6,6 @@
   <body>
     <%- include('../partials/nav') %>
     <main class="container py-4">
-            <% if (typeof reservation.paid !== 'undefined') { %>
-              <div class="mb-3">
-                <label class="form-label">Paid Status</label>
-                <input type="text" class="form-control" value="<%= reservation.paid ? 'Paid' : 'Unpaid' %>" readonly>
-              </div>
-            <% } %>
       <h1 class="h3 mb-3">Payment Form</h1>
       <p class="text-muted mb-4">Process payments for reservations and walk-ins. For front desk or phone reservations, mark payment as already taken.</p>
       <form method="post" action="/employee/reservations/<%= reservation.id %>/payment">
