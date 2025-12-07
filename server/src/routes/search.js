@@ -1,12 +1,12 @@
 const express = require('express');
 const { parseISO, startOfToday, addDays, format } = require('date-fns');
 const pool = require('../db/pool');
+const { nightsBetween } = require('../utils/policy');
 
 const router = express.Router();
 
 /**
  * Helper: fetch min / max rig length from active sites.
- * Used so the UI can show valid bounds to the user.
  */
 async function getRigBounds() {
   const [rows] = await pool.query(
@@ -15,38 +15,45 @@ async function getRigBounds() {
   const row = rows[0] || {};
   return {
     minLen: row.minLen || 1,
-    maxLen: row.maxLen || 100
+    maxLen: row.maxLen || 100,
   };
 }
 
 /**
- * Query helper:
- * Find available sites between checkIn and checkOut that:
- *  - are active
- *  - satisfy rig length (if > 0)
- *  - satisfy type (if provided)
- *  - have NO overlapping CONFIRMED reservations in that range
+ * Simple length-based pricing for display on search page:
+ *  - 35 ft  -> $30
+ *  - 40 ft  -> $35
+ *  - 45 ft  -> $40
+ *  - anything else -> $30 (fallback)
+ */
+function baseRateForLength(lengthFt) {
+  if (lengthFt === 35) return 30.0;
+  if (lengthFt === 40) return 35.0;
+  if (lengthFt === 45) return 40.0;
+  return 30.0;
+}
+
+/**
+ * Find available sites and enrich with pricing:
+ *  - nights
+ *  - nightlyRate, totalAmount
+ *  - militaryNightlyRate, militaryTotalAmount (20% off)
  */
 async function findAvailableSites({ checkIn, checkOut, rigLength, type, orderBy = 'lengthFt' }) {
   const params = [];
-  let whereClauses = ['s.active = 1'];
+  const whereClauses = ['s.active = 1'];
 
-  // Rig length filter
   if (rigLength && rigLength > 0) {
     whereClauses.push('s.lengthFt >= ?');
     params.push(rigLength);
   }
 
-  // Type filter
   if (type) {
     whereClauses.push('s.type = ?');
     params.push(type);
   }
 
-  // NOT EXISTS overlapping reservations:
-  //   status = 'CONFIRMED'
-  //   AND checkIn < checkOut
-  //   AND checkOut > checkIn
+  // Exclude sites that have overlapping CONFIRMED reservations
   whereClauses.push(`
     NOT EXISTS (
       SELECT 1
@@ -60,7 +67,7 @@ async function findAvailableSites({ checkIn, checkOut, rigLength, type, orderBy 
   `);
   params.push(checkOut, checkIn);
 
-  const whereSql = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
+  const whereSql = `WHERE ${whereClauses.join(' AND ')}`;
   const orderSql = orderBy === 'number' ? 'ORDER BY s.number ASC' : 'ORDER BY s.lengthFt ASC';
 
   const [rows] = await pool.query(
@@ -79,10 +86,31 @@ async function findAvailableSites({ checkIn, checkOut, rigLength, type, orderBy 
     params
   );
 
-  return rows;
+  const nights = nightsBetween(checkIn, checkOut);
+
+  return rows.map((site) => {
+    const nightlyRate = baseRateForLength(site.lengthFt);
+    const totalAmount = nightlyRate * nights;
+
+    const militaryNightlyRate = nightlyRate * 0.8;
+    const militaryTotalAmount = totalAmount * 0.8;
+
+    return {
+      ...site,
+      nights,
+      nightlyRate,
+      totalAmount,
+      militaryNightlyRate,
+      militaryTotalAmount,
+      displayNightlyRate: nightlyRate.toFixed(2),
+      displayTotalAmount: totalAmount.toFixed(2),
+      displayMilitaryNightlyRate: militaryNightlyRate.toFixed(2),
+      displayMilitaryTotalAmount: militaryTotalAmount.toFixed(2),
+    };
+  });
 }
 
-// Home: empty form
+// Landing / empty search form
 router.get('/', async (req, res) => {
   const rigBounds = await getRigBounds();
   const todayIso = format(startOfToday(), 'yyyy-MM-dd');
@@ -92,11 +120,11 @@ router.get('/', async (req, res) => {
     query: {},
     error: null,
     rigBounds,
-    todayIso
+    todayIso,
   });
 });
 
-// Standard search via form submit
+// Main search
 router.get('/search', async (req, res) => {
   const rigBounds = await getRigBounds();
   const today = startOfToday();
@@ -111,45 +139,54 @@ router.get('/search', async (req, res) => {
         query: req.query,
         error: 'Please provide check-in, check-out, and rig length.',
         rigBounds,
-        todayIso
+        todayIso,
       });
     }
 
     const rigLength = parseInt(rig_length, 10);
+    if (Number.isNaN(rigLength) || rigLength <= 0) {
+      return res.render('search', {
+        results: null,
+        query: req.query,
+        error: 'Rig length must be a positive number.',
+        rigBounds,
+        todayIso,
+      });
+    }
 
-    let checkIn, checkOut;
+    let checkIn;
+    let checkOut;
+
     try {
       checkIn = parseISO(check_in);
       checkOut = parseISO(check_out);
-    } catch (err) {
+    } catch {
       return res.render('search', {
         results: null,
         query: req.query,
         error: 'One or both dates are invalid.',
         rigBounds,
-        todayIso
+        todayIso,
       });
     }
 
-    // Check-in cannot be in the past
     if (checkIn < today) {
       return res.render('search', {
         results: null,
         query: req.query,
         error: 'Check-in date cannot be in the past.',
         rigBounds,
-        todayIso
+        todayIso,
       });
     }
 
-    // Check-out must be after check-in
     if (checkOut <= checkIn) {
       return res.render('search', {
         results: null,
         query: req.query,
         error: 'Check-out date must be after the check-in date.',
         rigBounds,
-        todayIso
+        todayIso,
       });
     }
 
@@ -158,7 +195,7 @@ router.get('/search', async (req, res) => {
       checkOut,
       rigLength,
       type,
-      orderBy: 'lengthFt'
+      orderBy: 'lengthFt',
     });
 
     res.render('search', {
@@ -166,7 +203,7 @@ router.get('/search', async (req, res) => {
       query: req.query,
       error: null,
       rigBounds,
-      todayIso
+      todayIso,
     });
   } catch (e) {
     res.render('search', {
@@ -174,17 +211,12 @@ router.get('/search', async (req, res) => {
       query: req.query,
       error: String(e),
       rigBounds,
-      todayIso
+      todayIso,
     });
   }
 });
 
-/**
- * Quick vacancy view
- * - Defaults to today -> tomorrow
- * - Rig length optional (0 = any)
- * - Reuses the same 'search' template
- */
+// Quick vacancy view that reuses search.ejs
 router.get('/vacancy', async (req, res) => {
   const rigBounds = await getRigBounds();
 
@@ -202,34 +234,23 @@ router.get('/vacancy', async (req, res) => {
     const checkIn = parseISO(check_in);
     const checkOut = parseISO(check_out);
 
-    // Enforce same date rules on vacancy as well
     if (checkIn < today) {
       return res.render('search', {
         results: null,
-        query: {
-          check_in,
-          check_out,
-          rig_length: rigLengthNum ? String(rigLengthNum) : '',
-          type
-        },
+        query: { check_in, check_out, rig_length: rigLengthNum ? String(rigLengthNum) : '', type },
         error: 'Check-in date cannot be in the past.',
         rigBounds,
-        todayIso
+        todayIso,
       });
     }
 
     if (checkOut <= checkIn) {
       return res.render('search', {
         results: null,
-        query: {
-          check_in,
-          check_out,
-          rig_length: rigLengthNum ? String(rigLengthNum) : '',
-          type
-        },
+        query: { check_in, check_out, rig_length: rigLengthNum ? String(rigLengthNum) : '', type },
         error: 'Check-out date must be after the check-in date.',
         rigBounds,
-        todayIso
+        todayIso,
       });
     }
 
@@ -238,7 +259,7 @@ router.get('/vacancy', async (req, res) => {
       checkOut,
       rigLength: rigLengthNum,
       type,
-      orderBy: 'number'
+      orderBy: 'number',
     });
 
     res.render('search', {
@@ -247,11 +268,11 @@ router.get('/vacancy', async (req, res) => {
         check_in,
         check_out,
         rig_length: rigLengthNum ? String(rigLengthNum) : '',
-        type
+        type,
       },
       error: null,
       rigBounds,
-      todayIso
+      todayIso,
     });
   } catch (e) {
     const today = startOfToday();
@@ -262,7 +283,7 @@ router.get('/vacancy', async (req, res) => {
       query: req.query,
       error: String(e),
       rigBounds,
-      todayIso
+      todayIso,
     });
   }
 });

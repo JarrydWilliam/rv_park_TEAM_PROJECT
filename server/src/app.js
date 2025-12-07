@@ -1,4 +1,3 @@
-
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
@@ -15,8 +14,6 @@ const adminRoutes = require('./routes/admin');
 const guestRoutes = require('./routes/guest');
 const employeeRoutes = require('./routes/employee');
 
-
-
 const { requireRole } = require('./middleware/auth');
 
 const app = express();
@@ -24,12 +21,10 @@ const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-
 app.use(
   express.static(path.join(__dirname, '../public'), {
     maxAge: '7d',
     setHeaders: (res, filePath) => {
-      
       if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
     },
   })
@@ -55,7 +50,6 @@ app.use(
 app.use('/', guestRoutes);
 app.use('/employee', employeeRoutes);
 
-
 app.use((req, res, next) => {
   res.locals.title = res.locals.title || 'RV Park';
   res.locals.currentUser = req.session.user || null; 
@@ -63,15 +57,21 @@ app.use((req, res, next) => {
 });
 
 app.get('/', (req, res) => {
-  if (!req.session.user) {
-    return res.redirect('/login');
+  // If logged in, send them to the appropriate dashboard
+  if (req.session && req.session.user) {
+    if (req.session.user.role === 'admin') {
+      return res.redirect('/admin/dashboard');
+    }
+    if (req.session.user.role === 'employee') {
+      return res.redirect('/employee/dashboard');
+    }
+    // default: customer / guest
+    return res.redirect('/guest/dashboard');
   }
-  
-  if (req.session.user.role === 'admin') return res.redirect('/admin/dashboard');
-  if (req.session.user.role === 'employee') return res.redirect('/employee/dashboard');
-  return res.redirect('/guest/dashboard');
-});
 
+  // If NOT logged in, show the guest dashboard as a public landing page
+  return res.render('guest/dashboard');
+});
 
 app.use('/', authRoutes);
 app.use('/', searchRoutes);
@@ -84,11 +84,9 @@ app.use('/', authRoutes);
 app.use('/', dashboardRoutes); 
 app.use('/', adminRoutes);
 
-
 app.use('/', searchRoutes);
 app.use('/', reservationRoutes);
 app.use('/', systemRoutes);
-
 
 app.use('/reservations', reservationRoutes);
 app.use('/payments', paymentsRoutes);

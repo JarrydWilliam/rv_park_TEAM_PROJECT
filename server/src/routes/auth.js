@@ -4,8 +4,6 @@ const router = express.Router();
 
 const pool = require('../db/pool'); 
 
-
-
 function hashPassword(password) {
   return crypto.createHash('sha256').update(password).digest('hex');
 }
@@ -17,11 +15,12 @@ function comparePassword(password, hash) {
 // --- LOGIN ---
 
 router.get('/login', (req, res) => {
-  res.render('login', { error: null });
+  const next = req.query.next || '';
+  res.render('login', { error: null, next });
 });
 
 router.post('/login', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, next } = req.body;
 
   try {
     const [rows] = await pool.query(
@@ -30,14 +29,14 @@ router.post('/login', async (req, res) => {
     );
 
     if (rows.length === 0) {
-      return res.status(401).render('login', { error: 'Invalid username or password.' });
+      return res.status(401).render('login', { error: 'Invalid username or password.', next });
     }
 
     const user = rows[0];
 
     const ok = comparePassword(password, user.password_hash);
     if (!ok) {
-      return res.status(401).render('login', { error: 'Invalid username or password.' });
+      return res.status(401).render('login', { error: 'Invalid username or password.', next });
     }
 
     // Store minimal info in session
@@ -50,13 +49,21 @@ router.post('/login', async (req, res) => {
       lastName: user.last_name,
     };
 
-    // Role-based landing
+    // If there is a next URL (e.g., from requireAuth), honor it
+    if (next && typeof next === 'string' && next.trim() !== '') {
+      return res.redirect(next);
+    }
+
+    // Otherwise, role-based landing
     if (user.role === 'admin') return res.redirect('/admin/dashboard');
     if (user.role === 'employee') return res.redirect('/employee/dashboard');
     return res.redirect('/guest/dashboard'); // customer
   } catch (err) {
     console.error('Login error:', err);
-    res.status(500).render('login', { error: 'An error occurred while signing in.' });
+    res.status(500).render('login', {
+      error: 'An error occurred while signing in.',
+      next,
+    });
   }
 });
 
@@ -118,9 +125,9 @@ router.post('/register', async (req, res) => {
     dodAffiliation,
     branch,
     rank,                     
-    Number(numAdults) || 1,
-    Number(numPets) || 0,
-    petBreedNotes || null
+    numAdults,
+    numPets,
+    petBreedNotes,
   ]
 );
 

@@ -7,8 +7,15 @@
     <%- include('../partials/nav') %>
 
     <main class="container py-4">
-      <h1 class="h3 mb-3">Welcome, <%= currentUser?.firstName || currentUser?.username %></h1>
-      <p class="text-muted mb-4">Guest portal</p>
+      <% const displayName = (currentUser && (currentUser.firstName || currentUser.username)) || 'Guest'; %>
+      <h1 class="h3 mb-3">Welcome, <%= displayName %></h1>
+      <p class="text-muted mb-4">
+        <% if (currentUser) { %>
+          Guest portal
+        <% } else { %>
+          Browse our park, check availability, and log in when you’re ready to book.
+        <% } %>
+      </p>
 
       <div class="row g-3">
         <div class="col-md-6">

@@ -9,12 +9,14 @@
     <header class="page-hero">
       <div class="container">
         <h1 class="display-6 fw-semibold mb-1">Find a Site</h1>
-        <p class="text-muted mb-0">Search by dates, rig length, and site type.</p>
+        <p class="text-muted mb-0">
+          Search by dates, rig length, and site type. Prices shown include standard and military rates.
+        </p>
       </div>
     </header>
 
     <main class="container py-4">
-      <section class="card card-elevated">
+      <section class="card card-elevated mb-4">
         <div class="card-body">
           <% if (error) { %>
             <div class="alert alert-danger mb-4">
@@ -22,7 +24,7 @@
             </div>
           <% } %>
 
-          <% 
+          <%
             const minLen = (rigBounds && rigBounds.minLen) || 1;
             const maxLen = (rigBounds && rigBounds.maxLen) || 100;
           %>
@@ -68,11 +70,11 @@
             <div class="col-md-2">
               <label class="form-label">Site type</label>
               <select name="type" class="form-select">
-                <option value="" <%= (!query || !query.type) ? 'selected' : '' %> >Any</option>
-                <option value="STANDARD" <%= (query && query.type==='STANDARD') ? 'selected' : '' %> >STANDARD</option>
-                <option value="TENT"     <%= (query && query.type==='TENT') ? 'selected' : '' %> >TENT</option>
-                <option value="DRY"      <%= (query && query.type==='DRY') ? 'selected' : '' %> >DRY</option>
-                <option value="TRAILER"  <%= (query && query.type==='TRAILER') ? 'selected' : '' %> >TRAILER</option>
+                <option value="" <%= (!query || !query.type) ? 'selected' : '' %>>Any</option>
+                <option value="STANDARD" <%= (query && query.type==='STANDARD') ? 'selected' : '' %>>STANDARD</option>
+                <option value="TENT"     <%= (query && query.type==='TENT') ? 'selected' : '' %>>TENT</option>
+                <option value="DRY"      <%= (query && query.type==='DRY') ? 'selected' : '' %>>DRY</option>
+                <option value="TRAILER"  <%= (query && query.type==='TRAILER') ? 'selected' : '' %>>TRAILER</option>
               </select>
             </div>
             <div class="col-md-1 d-grid">
@@ -85,21 +87,27 @@
       </section>
 
       <% if (results && results.length) { %>
-        <section class="mt-4">
+        <section>
           <div class="d-flex align-items-center justify-content-between mb-2">
             <h2 class="h5 mb-0">
               Available Sites
               <span class="text-muted fw-normal">(<%= results.length %>)</span>
             </h2>
+            <p class="small text-muted mb-0">
+              Pricing shown for <%= results[0].nights %> night<%= results[0].nights === 1 ? '' : 's' %>.
+              Military discount is 20% off standard rate.
+            </p>
           </div>
 
           <div class="table-responsive card card-elevated">
             <table class="table table-dark table-hover table-striped align-middle mb-0">
               <thead>
                 <tr>
-                  <th class="w-25">#</th>
+                  <th class="w-25">Site #</th>
                   <th>Type</th>
                   <th>Length (ft)</th>
+                  <th>Nightly rate</th>
+                  <th>Total for stay</th>
                   <th>Status</th>
                   <th class="text-end">Action</th>
                 </tr>
@@ -115,12 +123,27 @@
                     </td>
                     <td><%= s.lengthFt %></td>
                     <td>
+                      <div>$<%= s.displayNightlyRate %> / night</div>
+                      <div class="text-success small">
+                        Military: $<%= s.displayMilitaryNightlyRate %> / night
+                      </div>
+                    </td>
+                    <td>
+                      <div>$<%= s.displayTotalAmount %></div>
+                      <div class="text-success small">
+                        Military: $<%= s.displayMilitaryTotalAmount %>
+                      </div>
+                    </td>
+                    <td>
                       <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">
                         Available
                       </span>
                     </td>
                     <td class="text-end">
-                      <a href="/reserve/new?siteId=<%= s.id %>&check_in=<%= query.check_in %>&check_out=<%= query.check_out %>&rig_length=<%= query.rig_length %>&type=<%= query.type || '' %>" class="btn btn-sm btn-primary">
+                      <a
+                        href="/reserve/new?siteId=<%= s.id %>&check_in=<%= query.check_in %>&check_out=<%= query.check_out %>&rig_length=<%= query.rig_length %>&type=<%= query.type || '' %>"
+                        class="btn btn-sm btn-primary"
+                      >
                         Reserve
                       </a>
                     </td>
@@ -139,16 +162,23 @@
       (function () {
         const checkInInput = document.querySelector('input[name="check_in"]');
         const checkOutInput = document.querySelector('input[name="check_out"]');
-        if (!checkInInput || !checkOutInput) return;
-
         const today = '<%= todayIso %>';
-        checkInInput.min = today;
-        checkOutInput.min = today;
+
+        if (checkInInput && !checkInInput.value) {
+          checkInInput.value = today;
+        }
+        if (checkOutInput && !checkOutInput.value) {
+          const d = new Date(today);
+          d.setDate(d.getDate() + 1);
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          checkOutInput.value = `${yyyy}-${mm}-${dd}`;
+        }
 
         checkInInput.addEventListener('change', function () {
-          const inVal = checkInInput.value;
+          const inVal = this.value;
           if (inVal) {
-            // checkout cannot be before check-in
             checkOutInput.min = inVal;
             if (checkOutInput.value && checkOutInput.value <= inVal) {
               checkOutInput.value = '';

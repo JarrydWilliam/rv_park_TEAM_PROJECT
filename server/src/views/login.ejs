@@ -21,6 +21,11 @@
         <% } %>
 
         <form method="post" action="/login">
+          <input
+            type="hidden"
+            name="next"
+            value="<%= typeof next !== 'undefined' ? next : '' %>"
+          />
           <div class="mb-3">
             <label for="username" class="form-label">Username</label>
             <div class="input-group">
@@ -34,7 +39,6 @@
                 class="form-control"
                 autocomplete="username"
                 required
-                autofocus
               />
             </div>
           </div>
@@ -58,7 +62,7 @@
 
           
           <div class="mb-3 small text-muted">
-            Your role (customer / employee / admin) is determined by your account.
+            Use the credentials provided by the RV park staff or your customer account.
           </div>
 
           <button type="submit" class="btn btn-primary w-100 mb-3">
