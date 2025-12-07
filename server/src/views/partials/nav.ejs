@@ -1,69 +1,80 @@
-<nav class="navbar navbar-expand bg-nav sticky-top border-bottom">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
   <div class="container">
-    <a class="navbar-brand d-flex align-items-center gap-2 fw-semibold" href="/">
-      <i class="bi bi-compass"></i> RV Park
+    <a class="navbar-brand fw-semibold" href="/">
+      <i class="bi bi-compass me-1"></i> RV Park
     </a>
 
-    <ul class="navbar-nav ms-auto flex-row gap-2 align-items-center">
-      <li class="nav-item">
-        <a class="btn btn-sm btn-ghost" href="/vacancy">
-          <i class="bi bi-calendar-week me-1"></i>Vacancy
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="btn btn-sm btn-ghost" href="/health">
-          <i class="bi bi-activity me-1"></i>Health
-        </a>
-      </li>
-      <li class="nav-item">
-        <button class="btn btn-sm btn-ghost" id="themeToggle" aria-label="Toggle theme">
-          <i class="bi bi-moon-stars" id="themeIcon"></i>
-          <span class="ms-1 d-none d-sm-inline" id="themeLabel">Dark</span>
-        </button>
-      </li>
-      <% if (currentUser) { %>
-  <li class="nav-item">
-    <form action="/logout" method="post" class="d-inline">
-      <button type="submit" class="btn btn-sm btn-ghost">
-        <i class="bi bi-box-arrow-right me-1"></i> Logout
-      </button>
-    </form>
-  </li>
-<% } %>
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#mainNav"
+      aria-controls="mainNav"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
 
-    </ul>
+    <div class="collapse navbar-collapse" id="mainNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link" href="/search">
+            Find a Site
+          </a>
+        </li>
+
+        <% if (currentUser && currentUser.role === 'admin') { %>
+          <li class="nav-item">
+            <a class="nav-link" href="/admin/dashboard">Admin</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/admin/reports">Reports</a>
+          </li>
+        <% } else if (currentUser && currentUser.role === 'employee') { %>
+          <li class="nav-item">
+            <a class="nav-link" href="/employee/dashboard">Employee</a>
+          </li>
+        <% } else if (currentUser) { %>
+          <li class="nav-item">
+            <a class="nav-link" href="/guest/dashboard">My Dashboard</a>
+          </li>
+        <% } %>
+      </ul>
+
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+        <% if (!currentUser) { %>
+          <!-- Logged OUT: always show Sign in on every page -->
+          <li class="nav-item me-2">
+            <a class="btn btn-outline-light btn-sm" href="/login">
+              <i class="bi bi-box-arrow-in-right me-1"></i> Sign in
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="btn btn-primary btn-sm" href="/register">
+              Register
+            </a>
+          </li>
+        <% } else { %>
+          <!-- Logged IN: show name + logout -->
+          <li class="nav-item d-flex align-items-center me-3 small text-muted">
+            <i class="bi bi-person-circle me-1"></i>
+            <span>
+              <%= currentUser.firstName || currentUser.username %>
+              <% if (currentUser.role) { %>
+                (<%= currentUser.role %>)
+              <% } %>
+            </span>
+          </li>
+          <li class="nav-item">
+            <form method="post" action="/logout" class="d-inline">
+              <button type="submit" class="btn btn-outline-light btn-sm">
+                <i class="bi bi-box-arrow-right me-1"></i> Logout
+              </button>
+            </form>
+          </li>
+        <% } %>
+      </ul>
+    </div>
   </div>
 </nav>
-
-<script>
-(() => {
-  const root = document.documentElement;
-  const btn = document.getElementById('themeToggle');
-  const icon = document.getElementById('themeIcon');
-  const label = document.getElementById('themeLabel');
-
-  function applyIconLabel(theme) {
-    if (theme === 'dark') {
-      icon.className = 'bi bi-moon-stars';
-      label && (label.textContent = 'Dark');
-    } else {
-      icon.className = 'bi bi-brightness-high';
-      label && (label.textContent = 'Light');
-    }
-  }
-
-  function setTheme(next) {
-    root.setAttribute('data-bs-theme', next);
-    localStorage.setItem('theme', next);
-    applyIconLabel(next);
-  }
-
-  const current = root.getAttribute('data-bs-theme') || 'dark';
-  applyIconLabel(current);
-
-  btn?.addEventListener('click', () => {
-    const cur = root.getAttribute('data-bs-theme') || 'dark';
-    setTheme(cur === 'dark' ? 'light' : 'dark');
-  });
-})();
-</script>

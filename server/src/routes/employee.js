@@ -276,4 +276,23 @@ router.post('/users/:id/edit', requireRole('employee'), async (req, res) => {
   res.redirect('/employee/users');
 });
 
+// List / manage sites (employee view)
+// This handles GET /employee/sites because employee router is mounted at /employee
+router.get('/sites', requireRole('employee'), async (req, res) => {
+  try {
+    const [sites] = await pool.query('SELECT * FROM Site ORDER BY number ASC');
+
+    // Reuse the admin sites view so UI stays consistent
+    res.render('admin/sites', {
+      sites,
+      fromEmployee: true,
+      currentUser: req.session.user || null,
+    });
+  } catch (err) {
+    console.error('Error loading sites for employee:', err);
+    res.status(500).send('Unable to load sites.');
+  }
+});
+
+
 module.exports = router;
