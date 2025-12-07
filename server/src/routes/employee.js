@@ -87,7 +87,7 @@ router.get('/reservations/new', requireRole('employee'), async (req, res) => {
     const co = new Date(checkOut);
     const today = new Date();
 
-    if (ci < new Date(today.getFullYear(), today.getMonth(), today.getDate()))) {
+    if (ci < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
       error = 'Check-in cannot be in the past.';
     } else if (co <= ci) {
       error = 'Check-out must be after check-in.';
